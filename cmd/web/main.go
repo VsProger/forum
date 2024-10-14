@@ -15,11 +15,11 @@ import (
 
 type application struct {
 	logger        *slog.Logger
-	snippets      *models.SnippetModel
+	posts         *models.PostModel
 	templateCache map[string]*template.Template
 }
 
-func main() { // 60 44
+func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	cfg, err := config.NewConfig()
@@ -50,7 +50,7 @@ func main() { // 60 44
 
 	app := &application{
 		logger:        logger,
-		snippets:      &models.SnippetModel{DB: db},
+		posts:         &models.PostModel{DB: db},
 		templateCache: templateCache,
 	}
 

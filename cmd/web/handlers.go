@@ -15,20 +15,20 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	snippets, err := app.snippets.Latest()
+	snippets, err := app.posts.Latest()
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	data.Snippets = snippets
+	data.Posts = snippets
 
 	app.render(w, r, http.StatusOK, "home.html", data)
 
 }
 
-func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) postView(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.Atoi(params.ByName("id"))
@@ -37,7 +37,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippet, err := app.snippets.Get(id)
+	post, err := app.posts.Get(id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -48,31 +48,53 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.Snippet = snippet
+	data.Post = post
 
 	app.render(w, r, http.StatusOK, "view.html", data)
 }
 
-func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) showPostCreate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Display form for creating a new snippet..."))
 }
 
-func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+//func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+//	//if r.Method != http.MethodPost {
+//	//	w.Header().Set("Allow", http.MethodPost)
+//	//	app.clientError(w, http.StatusBadRequest)
+//	//	return
+//	//}
+//
+//	title := "0 snail"
+//	content := "snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n- Kobayashi Issa"
+//	expires := 7
+//
+//	id, err := app.posts.Insert(title, content, expires)
+//	if err != nil {
+//		app.serverError(w, r, err)
+//		return
+//	}
+//
+//	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+//}
+
+func (app *application) doCreatePost(w http.ResponseWriter, r *http.Request) {
 	//if r.Method != http.MethodPost {
 	//	w.Header().Set("Allow", http.MethodPost)
 	//	app.clientError(w, http.StatusBadRequest)
 	//	return
 	//}
 
-	title := "0 snail"
-	content := "snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n- Kobayashi Issa"
-	expires := 7
+	authorID := 1
+	categoryID := 1
 
-	id, err := app.snippets.Insert(title, content, expires)
+	title := "HEEllllllllll YEEEaaaaaa snail"
+	content := "snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n- Kobayashi Issa"
+
+	id, err := app.posts.Insert(authorID, title, content, categoryID)
 	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/post/view/%d", id), http.StatusSeeOther)
 }

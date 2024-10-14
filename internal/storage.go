@@ -34,12 +34,14 @@ func CreateTables(db *sql.DB, config config.Config) error {
 		if request == "" {
 			continue
 		}
-		log.Printf("Executing SQL statement: %s", request)
+
 		_, err := db.Exec(request)
 		if err != nil {
 			log.Printf("Error executing SQL statement: %s, error: %v", request, err)
 			return err
 		}
 	}
+	log.Printf("Successfully executing SQL statements")
+
 	return nil
 }

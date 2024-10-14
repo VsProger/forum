@@ -9,8 +9,8 @@ import (
 
 type templateData struct {
 	CurrentYear int
-	Snippet     models.Snippet
-	Snippets    []models.Snippet
+	Post        models.Post
+	Posts       []models.Post
 }
 
 func humanDate(t time.Time) string {

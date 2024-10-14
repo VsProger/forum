@@ -1,17 +1,21 @@
-{{define "title"}}Snippet #{{.Snippet.ID}}{{end}}
+{{define "title"}}Post #{{.Post.ID}}{{end}}
 
 {{define "main"}}
-    {{with .Snippet}}
-    <div class="snippet">
-        <div class="metadata">
-            <strong>{{.Title}}</strong>
-            <span>#{{.ID}}</span>
-        </div>
-        <pre><code>{{.Content}}</code></pre>
-        <div class="metadata">
-            <time>Created: {{humanDate .Created}}</time>
-            <time>Expires: {{humanDate .Expires}}</time>
-        </div>
+{{with .Post}}
+<div class="snippet">
+    <div class="metadata">
+        <strong>{{.Title}}</strong>
+        <span>#{{.ID}}</span>
     </div>
-    {{end}}
+    <pre><code>{{.Text}}</code></pre>
+    <div class="metadata">
+        <time>Created: {{humanDate .CreationTime}}</time>
+        <time>Category ID: #{{.CategoryID}}</time>
+    </div>
+    <div class="reaction-counts">
+        <span>Likes: {{.LikeCount}}</span>
+        <span>Dislikes: {{.DislikeCount}}</span>
+    </div>
+</div>
+{{end}}
 {{end}}
