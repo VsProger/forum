@@ -11,6 +11,8 @@ type templateData struct {
 	CurrentYear int
 	Post        models.Post
 	Posts       []models.Post
+	Categories  []models.Category
+	Form        any
 }
 
 func humanDate(t time.Time) string {

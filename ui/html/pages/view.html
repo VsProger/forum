@@ -10,7 +10,6 @@
     <pre><code>{{.Text}}</code></pre>
     <div class="metadata">
         <time>Created: {{humanDate .CreationTime}}</time>
-        <time>Category ID: #{{.CategoryID}}</time>
     </div>
     <div class="reaction-counts">
         <span>Likes: {{.LikeCount}}</span>
@@ -18,4 +17,10 @@
     </div>
 </div>
 {{end}}
+<div class="categories">
+        <strong>Categories:</strong>
+        {{range .Categories}}
+        <span class="category">{{.Name}}</span>
+        {{end}}
+</div>
 {{end}}

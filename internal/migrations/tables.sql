@@ -13,9 +13,7 @@ CREATE TABLE IF NOT EXISTS Posts (
     LikeCount INTEGER DEFAULT 0,
     DislikeCount INTEGER DEFAULT 0,
     CreationTime TIMESTAMP NOT NULL,
-    CategoryID INTEGER,
-    FOREIGN KEY (AuthorID) REFERENCES User(ID),
-    FOREIGN KEY (CategoryID) REFERENCES Category(ID)
+    FOREIGN KEY (AuthorID) REFERENCES User(ID)
 );
 
 CREATE TABLE IF NOT EXISTS Comment (
@@ -40,10 +38,10 @@ VALUES (1,'Golang'),
        (2,'SQL'),
        (3,'Docker'),
        (4,'HTML'),
-       (5,'CSS');
+       (5,'Other');
 
 
-    CREATE TABLE IF NOT EXISTS PostCategory (
+CREATE TABLE IF NOT EXISTS PostCategory (
     PostID INTEGER,
     CategoryID INTEGER,
     FOREIGN KEY (PostID) REFERENCES Posts(ID),

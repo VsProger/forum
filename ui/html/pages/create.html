@@ -1,0 +1,49 @@
+{{define "title"}}Create a New Post{{end}}
+
+{{define "main"}}
+<form action="/post/create" method="POST">
+    <div>
+        <label>Title:</label>
+        {{with .Form.FieldErrors.title}}
+            <label class="error">{{.}}</label>
+        {{end}}
+        <input type="text" name="title" value="{{.Form.Title}}">
+    </div>
+    <div>
+        <label>Text:</label>
+        {{with .Form.FieldErrors.content}}
+            <label class="error">{{.}}</label>
+        {{end}}
+        <textarea name="content">{{.Form.Text}}</textarea>
+    </div>
+    <div>
+        <label>Categories:</label>
+        {{with .Form.FieldErrors.categories}}
+            <label class="error">{{.}}</label>
+        {{end}}
+        <div>
+            <input type="checkbox" id="category_golang" name="categories[]" value="1">
+            <label for="category_golang">Golang</label>
+        </div>
+        <div>
+            <input type="checkbox" id="category_sql" name="categories[]" value="2">
+            <label for="category_sql">SQL</label>
+        </div>
+        <div>
+            <input type="checkbox" id="category_docker" name="categories[]" value="3">
+            <label for="category_docker">Docker</label>
+        </div>
+        <div>
+            <input type="checkbox" id="category_html" name="categories[]" value="4">
+            <label for="category_html">HTML</label>
+        </div>
+        <div>
+            <input type="checkbox" id="category_css" name="categories[]" value="5">
+            <label for="category_css">Other</label>
+        </div>
+    </div>
+    <div>
+        <input type="submit" value="Publish post">
+    </div>
+</form>
+{{end}}
