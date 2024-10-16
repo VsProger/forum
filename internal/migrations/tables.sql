@@ -33,13 +33,13 @@ CREATE TABLE IF NOT EXISTS Category (
     Name TEXT NOT NULL
 );
 
-INSERT INTO Category(ID, Name)
-VALUES (1,'Golang'),
-       (2,'SQL'),
-       (3,'Docker'),
-       (4,'HTML'),
-       (5,'Other');
-
+-- INSERT INTO Category(ID, Name)
+-- VALUES (1,'Golang'),
+--        (2,'SQL'),
+--        (3,'Docker'),
+--        (4,'HTML'),
+--        (5,'Other');
+--
 
 CREATE TABLE IF NOT EXISTS PostCategory (
     PostID INTEGER,

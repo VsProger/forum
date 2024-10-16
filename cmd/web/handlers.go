@@ -4,18 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/VsProger/snippetbox/internal/models"
+	"github.com/VsProger/snippetbox/internal/validator"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 )
 
 type postCreateForm struct {
 	Title       string
 	Text        string
-	Categories  []int
-	FieldErrors map[string]string
+	CategoryIDs []int
+	validator.Validator
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -95,34 +94,27 @@ func (app *application) doPostCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		categoryIDs = append(categoryIDs, id)
 	}
+	if len(categoryIDs) == 0 {
+		categoryIDs = append(categoryIDs, 5)
+	}
 	form := postCreateForm{
 		Title:       r.PostForm.Get("title"),
 		Text:        r.PostForm.Get("content"),
-		Categories:  categoryIDs,
-		FieldErrors: map[string]string{},
+		CategoryIDs: categoryIDs,
 	}
 
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(form.Title) > 100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Text), "content", "This field cannot be blank")
 
-	if strings.TrimSpace(form.Text) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
-
-	if len(form.Categories) == 0 {
-		form.FieldErrors["categories"] = "This field must contain at least 1 category"
-	}
-	if len(form.FieldErrors) > 0 {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "create.html", data)
 		return
 	}
 
-	id, err := app.posts.Insert(1, form.Title, form.Text, form.Categories)
+	id, err := app.posts.Insert(1, form.Title, form.Text, form.CategoryIDs)
 	if err != nil {
 		app.serverError(w, r, err)
 		return

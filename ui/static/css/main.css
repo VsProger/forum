@@ -164,9 +164,6 @@ form div {
     margin-bottom: 18px;
 }
 
-form div:last-child {
-    border-top: 1px dashed #E4E5E7;
-}
 
 form input[type="radio"] {
     margin-left: 18px;
