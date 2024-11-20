@@ -1,6 +1,6 @@
 package handlers
 
-import "forum/internal/service"
+import "github.com/VsProger/snippetbox/internal/service"
 
 type Handler struct {
 	service *service.Service
