@@ -1,10 +1,11 @@
-package main
+package handlers
 
 import (
-	"github.com/VsProger/snippetbox/internal/models"
 	"html/template"
 	"path/filepath"
 	"time"
+
+	"github.com/VsProger/snippetbox/internal/models"
 )
 
 type templateData struct {

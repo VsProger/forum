@@ -1,6 +1,6 @@
 module github.com/VsProger/snippetbox
 
-go 1.23.2
+go 1.22
 
 require (
 	github.com/julienschmidt/httprouter v1.3.0
