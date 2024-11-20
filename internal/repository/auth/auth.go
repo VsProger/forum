@@ -13,6 +13,8 @@ type AuthRepo struct {
 type Authorization interface {
 	CreateUser(user models.User) error
 	GetUserByToken(token string) (models.User, error)
+	GetUserByEmail(email string) (models.User, error)
+	GetUserByUsername(username string) (models.User, error)
 }
 
 func NewAuthRepo(db *sql.DB) *AuthRepo {
@@ -39,6 +41,30 @@ func (auth *AuthRepo) GetUserByToken(token string) (models.User, error) {
 	var user models.User
 
 	if err := auth.DB.QueryRow(query, token).Scan(&user.ID, &user.Email, &user.Username, &user.Password); err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (r *AuthRepo) GetUserByEmail(email string) (models.User, error) {
+	query := `SELECT ID, Username, Email, Password FROM User WHERE Email = ?`
+
+	row := r.DB.QueryRow(query, email)
+	user := models.User{}
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (r *AuthRepo) GetUserByUsername(username string) (models.User, error) {
+	query := `SELECT ID, Username, Email, Password FROM User WHERE Username = ?`
+
+	row := r.DB.QueryRow(query, username)
+	user := models.User{}
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	if err != nil {
 		return user, err
 	}
 	return user, nil

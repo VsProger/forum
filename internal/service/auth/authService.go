@@ -1,4 +1,4 @@
-package authService
+package service
 
 import (
 	"github.com/VsProger/snippetbox/internal/models"
@@ -8,6 +8,9 @@ import (
 type Auth interface {
 	CreateUser(user models.User) error
 	GetUserByToken(token string) (models.User, error)
+	GetUserByEmail(email string) (models.User, error)
+	CheckUser(user *models.User) error
+	GetUserByUsername(username string) (models.User, error)
 }
 
 type AuthService struct {
@@ -34,4 +37,35 @@ func (a *AuthService) GetUserByToken(token string) (models.User, error) {
 		return user, nil
 	}
 	return user, nil
+}
+
+func (a *AuthService) GetUserByEmail(email string) (models.User, error) {
+	user, err := a.repo.GetUserByEmail(email)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (a *AuthService) GetUserByUSername(username string) (models.User, error) {
+	user, err := a.repo.GetUserByUsername(username)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (a *AuthService) CheckUser(user *models.User) error {
+	if err := pkg.ValidatePassword(user.Password); err != nil {
+		return err
+	}
+
+	if err := pkg.ValidateUsername(user.Username); err != nil {
+		return err
+	}
+
+	if err := pkg.ValidateEmail(user.Email); err != nil {
+		return err
+	}
+	return nil
 }
