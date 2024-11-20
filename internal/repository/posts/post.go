@@ -54,7 +54,7 @@ func (r *PostRepo) CreatePost(post models.Post) error {
 
 func (r *PostRepo) GetPosts() ([]models.Post, error) {
 	query := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.CreationTime, u.Username 
-	FROM Post p
+	FROM Posts p
 	JOIN User u ON p.AuthorID =u.ID`
 	queryCategories := `SELECT ID, Name FROM Category WHERE ID IN (SELECT CategoryID FROM PostCategory WHERE PostID = ?)`
 	posts := []models.Post{}

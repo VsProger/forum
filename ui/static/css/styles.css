@@ -1,0 +1,203 @@
+body {
+    background-image: url("https://i.ibb.co.com/dQm0H6g/5238981.jpg");
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: rgb(50, 50, 50);
+    color: white;
+}
+
+
+a {
+    color: white;
+    text-decoration: none;
+
+}
+
+header {
+    background-color:  #00000092;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header__divider {
+    margin: 0 10px; /* Расстояние между элементами Log in и Sign up */
+}
+/* Добавленные стили */
+@keyframes marquee {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(calc(100% + 100vw)); } /* Изменил расстояние на 100vw */
+}
+
+.header__marquee-container {
+    width: 88vw; /* Изменил на 100vw */
+    overflow: hidden;
+}
+
+.header__title {
+    white-space: nowrap;
+    display: inline-block;
+    animation: marquee 17s linear infinite; /* Увеличил скорость анимации */
+    word-spacing: 50px; /* Расстояние между каждым повторением "Music Forum" */
+}
+
+
+h1 {
+    margin: 0;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+nav {
+    display: flex;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+nav li {
+    margin-left: 20px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+}
+
+main {
+    padding: 20px 0;
+    text-align: center;
+}
+
+section {
+    margin-bottom: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+button {
+    background-color: #6126a96f;
+    color: white;
+    cursor: pointer;
+    padding: 8px;
+    border: none;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+#filters {
+    display: flex;
+    flex-direction: column; /* Изменим направление фильтров на горизонтальное */
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    flex-wrap: wrap; /* Добавим перенос элементов на следующую строку при нехватке места */
+}
+
+.filter-option {
+    display: flex;
+    flex-direction: row; /* Изменим направление кнопки и метки на горизонтальное */
+    align-items: center;
+    margin: 0 20px;
+}
+
+.filter-option input[type="checkbox"] {
+    display: none; /* Скрыть стандартный чекбокс */
+}
+
+.filter-checkbox {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid white; /* Белая обводка для круглого чекбокса */
+    border-radius: 50%; /* Делаем чекбокс круглым */
+    margin-right: 10px; /* Отступ между круглым чекбоксом и иконкой */
+}
+
+/* Отмечаем кастомный чекбокс при нажатии */
+.filter-option input[type="checkbox"]:checked + .filter-checkbox {
+    background-color: white; /* Цвет фона при выборе */
+}
+.filter-option .filter-label {
+    margin-left: 10px; /* Добавим отступ между кнопкой и меткой */
+    cursor: pointer; /* Добавим указатель при наведении на метку */
+}
+
+.filter-option .filter-label:before {
+    content: "";
+    display: inline-block;
+    width: 40px; /* Увеличим размер значка */
+    height: 40px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    cursor: pointer; /* Добавим указатель при наведении на метку */
+}
+
+
+/* Стили для иконок */
+.filter-option img {
+    width: 50px; /* Установите желаемый размер иконки */
+    height: 50px;
+    background-color: rgba(201, 100, 201, 0.5); /* Цвет фона */
+    border-radius: 50%; /* Сделать иконку круглой */
+    padding: 5px; /* Добавим небольшие внутренние отступы */
+    margin-right: 10px; /* Отступ между иконкой и текстом */
+}
+.filterSubmit{
+    margin-top: 10px;
+}
+
+
+
+#posts {
+    text-align: center;
+}
+
+#posts h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.post {
+    display: inline-block;
+    margin: 0 10px;
+    vertical-align: top;
+    width: 30%;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.post {
+    white-space: nowrap;
+    /* Запретить перенос текста */
+    overflow: hidden;
+    /* Скрыть вышедший за пределы текст */
+    text-overflow:ellipsis;
+    /* Отображать многоточие для вышедшего за пределы текста */
+}
+
+.post h3 {
+    margin-top: 0;
+}
+

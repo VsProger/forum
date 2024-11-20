@@ -9,38 +9,6 @@ import (
 	"github.com/VsProger/snippetbox/pkg"
 )
 
-func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
-	nameFunction := "indexHandler"
-	if r.URL.Path != "/" {
-		ErrorHandler(w, http.StatusNotFound, nameFunction)
-		return
-	}
-
-	var username string
-
-	allPosts, err := h.service.GetPosts()
-	if err != nil {
-		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
-		return
-	}
-	result := map[string]interface{}{
-		"Posts":    allPosts,
-		"Username": username,
-	}
-	tmpl, err := template.ParseFiles("ui/html/pages/index.html")
-	if err != nil {
-		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
-		return
-	}
-	if err = tmpl.Execute(w, result); err != nil {
-		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
-		return
-	}
-
-	ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
-	return
-}
-
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "CreatePost"
 	tmpl, err := template.ParseFiles("ui/html/pages/createPost.html")

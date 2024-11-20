@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/ui/static/css/createpost.css">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+    <title>Create Post - Music Forum</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><a href="/">Music Forum</a></h1>
+
+        <nav>
+            <a href="/">Back to Posts</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="create-post">
+            <h2>Create Post</h2>
+            <form action="/posts/create" method="post">
+                <label for="title">Title:</label><br>
+                <input type="text" id="title" name="title" required><br><br>
+
+                <label for="text">Text:</label><br>
+                <textarea id="text" name="text" rows="4" cols="50" required></textarea><br><br>
+
+                <div class="error">{{ .ErrorText }}</div>
+
+                    <h2>Genre:</h2>
+                    <label><input type="checkbox" name="categories" value="Rock">Rock</label>
+                    <label><input type="checkbox" name="categories" value="Hip-Hop">Hip-Hop</label>
+                    <label><input type="checkbox" name="categories" value="Jazz">Jazz</label>
+                    <label ><input type="checkbox" name="categories" value="Other">Other</label> 
+                <button type="submit">Create Post</button>
+            </form>
+        </section>
+    </main>
+
+    <script src="/ui/static/js/script.js"></script>
+</body>
+</html>

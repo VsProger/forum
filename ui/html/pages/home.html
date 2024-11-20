@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/ui/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+    <title>Music Forum</title>
+</head>
+<body>
+    <header>
+        <div class="header__marquee-container"> <!-- Обертка для анимации -->
+            <a href="/" class="music"><h1 class="header__title">Music Forum          Music Forum          Music Forum          Music Forum     Music Forum     Music Forum     Music Forum     Music Forum</h1> <!-- Добавлены несколько слов "Music Forum" --></a>
+            
+        </div>
+        <nav>
+            {{if .Username}}
+            <a href="/posts/create" class="button-link">Create Post</a>
+            <span class="header__divider"></span>
+            <a href="/myposts">My Posts</a>
+            <span class="header__divider"></span>
+            <a href="/mylikedposts" class="button-link">Liked Posts</a>
+            <span class="header__divider"></span>
+            <a href="/logout" class="button-link">Signout</a>
+            {{else}}
+            <a href="/" class="button-link">All Posts</a>
+            <span class="header__divider"></span>
+            <a href="/login">Log in</a>
+            <span class="header__divider"></span>
+            <a href="/register">Sign up</a>
+            {{end}}
+        </nav>
+    </header>
+    <main>
+        <section id="filters">
+            <h2>Filter by Genre</h2>
+            <form class="form-filter" action="/filter" method="get" name="form">
+                <label class="filter-option">
+                    <input type="checkbox" name="categories" value="Rock">
+                    <span class="filter-checkbox"></span> 
+                    <img src="/ui/static/img/rock.png" alt="Rock Icon">
+                    <span class="filter-label">Rock</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" name="categories" value="Jazz">
+                    <span class="filter-checkbox"></span> 
+                    <img src="/ui/static/img/jazz.png" alt="jazz Icon">
+                    <span class="filter-label">Jazz</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" name="categories" value="Hip-Hop">
+                    <span class="filter-checkbox"></span>
+                    <img src="/ui/static/img/hip-hop.png" alt="Hip-hop Icon"> 
+                    <span class="filter-label">Hip-Hop</span>
+                </label>
+                <label class="filter-option">
+                    <input type="checkbox" name="categories" value="Other">
+                    <span class="filter-checkbox"></span> 
+                    <img src="/ui/static/img/other.png" alt="Other Icon"> 
+                    <span class="filter-label">Other</span>
+                </label>
+                <button class="filterSubmit"type="submit">Filter</button>
+            </form>
+        </section>
+        
+        <section id="posts">
+            <h2>Recent Posts</h2>
+
+            {{range .Posts}}
+            <article class="post">
+                <a href="/posts/{{.ID}}">
+                <h3>{{.Title}}</h3>
+                <p>Username: {{.Username}}</p>
+                <p>Text: {{.Text}}</p>
+                <p>Genres: {{range $i, $cat := .Categories}}{{if $i}}, {{end}}{{ $cat.Name }}{{- end}}</p>
+                <p>Creation Time: {{.CreationTime.Format "2006 Jan 02"}}</p>
+            </a>
+            </article>
+            {{end}}
+        </section>
+    </main>
+    <script src="/ui/static/js/script.js"></script>
+</body>
+
+</html>

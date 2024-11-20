@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <link rel="stylesheet" href="/ui/static/css/login.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1><a href="/">Music Forum</a></h1>
+        <nav>
+            <ul>
+                <li><a href="/login">Sign In</a></li>
+                <li><a href="/register">Sign Up</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <form class="form-signin" action="/login" method="post" name="form">
+            <label for="email">Email</label>
+            <input class="form-styling" type="text" name="email" placeholder=""/>
+            <label for="password">Password</label>
+            <input class="form-styling" type="password" name="password" placeholder=""/>
+            <div class="error">{{ .ErrorText }}</div>
+            <div class="btn-animate">
+                <button class="btn-signin">Sign in</button>
+            </div>
+        </form>
+    </div>
+    <script src="/ui/static/js/signup.js"></script>
+</body>
+</html>
