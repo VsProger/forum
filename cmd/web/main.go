@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/VsProger/snippetbox/internal/server"
@@ -12,6 +13,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	fmt.Print(cfg)
 
 	app := server.NewApp(*cfg)
 
