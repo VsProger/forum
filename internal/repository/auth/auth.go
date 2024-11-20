@@ -15,6 +15,8 @@ type Authorization interface {
 	GetUserByToken(token string) (models.User, error)
 	GetUserByEmail(email string) (models.User, error)
 	GetUserByUsername(username string) (models.User, error)
+	DeleteSessionByUserID(userID int) error
+	CreateSession(sessions models.Session) error
 }
 
 func NewAuthRepo(db *sql.DB) *AuthRepo {
@@ -68,4 +70,23 @@ func (r *AuthRepo) GetUserByUsername(username string) (models.User, error) {
 		return user, err
 	}
 	return user, nil
+}
+
+func (auth *AuthRepo) DeleteSessionByUserID(userID int) error {
+	query := `DELETE FROM Session WHERE UserID = ?`
+	_, err := auth.DB.Exec(query, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (auth *AuthRepo) CreateSession(session models.Session) error {
+	query := `INSERT INTO Session (UserID, Token, ExpTime) VALUES ($1, $2, $3)`
+
+	_, err := auth.DB.Exec(query, session.UserID, session.Token, session.ExpTime)
+	if err != nil {
+		return err
+	}
+	return nil
 }

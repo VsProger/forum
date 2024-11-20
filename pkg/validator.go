@@ -2,10 +2,14 @@ package pkg
 
 import (
 	"errors"
+	"log"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/VsProger/snippetbox/internal/models"
+	"github.com/gofrs/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -104,4 +108,59 @@ func ValidateComment(comment models.Comment) error {
 		return models.ErrNotAscii
 	}
 	return nil
+}
+
+func ValidateEmail(email string) error {
+	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !re.MatchString(email) {
+		return ErrInvalidEmail
+	}
+	return nil
+}
+
+func ValidatePassword(password string) error {
+	if len(password) < 8 {
+		return ErrInvalidPassword
+	}
+	hasUpperCase := false
+	hasLowerCase := false
+	hasDigit := false
+
+	for _, char := range password {
+		switch {
+		case 'A' <= char && char <= 'Z':
+			hasUpperCase = true
+		case 'a' <= char && char <= 'z':
+			hasLowerCase = true
+		case '0' <= char && char <= '9':
+			hasDigit = true
+		}
+	}
+
+	if !hasUpperCase || !hasLowerCase || !hasDigit {
+		return ErrInvalidPassword
+	}
+
+	return nil
+}
+
+func ValidateUsername(username string) error {
+	re := regexp.MustCompile(`^[a-zA-Z0-9_.-]{3,20}$`)
+	if !re.MatchString(username) {
+		return ErrInvalidUsername
+	}
+	return nil
+}
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+func GenerateToken() string {
+	u, err := uuid.NewV4()
+	if err != nil {
+		log.Print(err)
+	}
+	return u.String()
 }
