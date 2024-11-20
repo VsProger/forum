@@ -9,6 +9,8 @@ import (
 
 type Posts interface {
 	CreatePost(post models.Post) error
+	GetCategoryByName(name string) (*models.Category, error)
+	CreateCategory(name string) error
 }
 
 type PostRepo struct {
@@ -111,4 +113,26 @@ func (m *PostRepo) Latest() ([]models.Post, error) {
 	}
 
 	return posts, nil
+}
+
+func (r *PostRepo) GetCategoryByName(name string) (*models.Category, error) {
+	query := `
+	SELECT ID, Name
+	FROM Category
+	WHERE Name = ?`
+	row := r.DB.QueryRow(query, name)
+	category := models.Category{}
+	if err := row.Scan(&category.ID, &category.Name); err != nil {
+		return nil, err
+	}
+	return &category, nil
+}
+
+func (r *PostRepo) CreateCategory(name string) error {
+	query := "INSERT INTO Category (Name) VALUES (?)"
+	_, err := r.DB.Exec(query, name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
