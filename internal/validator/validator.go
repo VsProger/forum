@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -38,6 +37,6 @@ func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
 }
 
-func PermittedValue[T comparable](value T, permittedValues ...T) bool {
-	return slices.Contains(permittedValues, value)
-}
+// func PermittedValue[T comparable](value T, permittedValues ...T) bool {
+// 	return slices.Contains(permittedValues, value)
+// }
