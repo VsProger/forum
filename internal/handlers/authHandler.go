@@ -119,7 +119,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		if err := tmpl.Execute(w, nil); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
-		}
+		} // s
 	case "POST":
 		user := &models.User{
 			Username: r.FormValue("username"),
