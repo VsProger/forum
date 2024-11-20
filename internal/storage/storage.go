@@ -1,4 +1,4 @@
-package internal
+package storage
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 )
 
 func NewSqlite(config config.Config) (*sql.DB, error) {
-	db, err := sql.Open(config.Driver, config.Dsn)
+	db, err := sql.Open(config.DB.Driver, config.DB.Dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func NewSqlite(config config.Config) (*sql.DB, error) {
 }
 
 func CreateTables(db *sql.DB, config config.Config) error {
-	file, err := os.ReadFile(config.Database)
+	file, err := os.ReadFile(config.DB.Database)
 	if err != nil {
 		return err
 	}
