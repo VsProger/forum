@@ -1,27 +1,37 @@
-package main
+package handlers
 
-import (
-	"github.com/julienschmidt/httprouter"
-	"github.com/justinas/alice"
-	"net/http"
-)
+import "net/http"
 
-func (app *application) routes() http.Handler {
-	router := httprouter.New()
+func (h *Handler) Router() http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/ui/static/", http.StripPrefix("/ui/static/", http.FileServer(http.Dir("./ui/static"))))
 
-	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		app.notFound(w)
-	})
+	mux.HandleFunc("/", h.home)
+	// mux.HandleFunc("/login", h.login)
+	// mux.HandleFunc("/register", h.register)
+	// mux.HandleFunc("/logout", h.AuthorizationMid(h.logout))
 
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	mux.HandleFunc("/posts/create", h.doPostCreate)
 
-	router.HandlerFunc(http.MethodGet, "/", app.home)
-	router.HandlerFunc(http.MethodGet, "/post/view/:id", app.postView)
-	router.HandlerFunc(http.MethodGet, "/post/create", app.showPostCreate)
-	router.HandlerFunc(http.MethodPost, "/post/create", app.doPostCreate)
-
-	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
-
-	return standard.Then(router)
+	return h.AllHandler(mux)
 }
+
+// func (h *Handler) routes() http.Handler {
+// 	router := httprouter.New()
+
+// 	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		h.notFound(w)
+// 	})
+
+// 	fileServer := http.FileServer(http.Dir("./ui/static/"))
+// 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+
+// 	router.HandlerFunc(http.MethodGet, "/", app.home)
+// 	router.HandlerFunc(http.MethodGet, "/post/view/:id", app.postView)
+// 	router.HandlerFunc(http.MethodGet, "/post/create", app.showPostCreate)
+// 	router.HandlerFunc(http.MethodPost, "/post/create", app.doPostCreate)
+
+// 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+
+// 	return standard.Then(router)
+// }

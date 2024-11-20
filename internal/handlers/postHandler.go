@@ -1,123 +1,184 @@
-package main
+package handlers
 
 import (
-	"errors"
-	"fmt"
-	"github.com/VsProger/snippetbox/internal/models"
-	"github.com/VsProger/snippetbox/internal/validator"
-	"github.com/julienschmidt/httprouter"
+	"html/template"
 	"net/http"
 	"strconv"
+
+	"github.com/VsProger/snippetbox/internal/models"
+	"github.com/VsProger/snippetbox/pkg"
 )
 
-type postCreateForm struct {
-	Title       string
-	Text        string
-	CategoryIDs []int
-	validator.Validator
-}
+func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
+	nameFunction := "indexHandler"
+	if r.URL.Path != "/" {
+		ErrorHandler(w, http.StatusNotFound, nameFunction)
+		return
+	}
 
-func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	//if r.URL.Path != "/" {
-	//	app.notFound(w)
-	//	return
-	//}
+	var username string
 
-	snippets, err := app.posts.Latest()
+	allPosts, err := h.service.GetPosts()
 	if err != nil {
-		app.serverError(w, r, err)
+		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
 	}
-
-	data := app.newTemplateData(r)
-	data.Posts = snippets
-
-	app.render(w, r, http.StatusOK, "home.html", data)
-
-}
-
-func (app *application) postView(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-
-	id, err := strconv.Atoi(params.ByName("id"))
-	if err != nil || id < 1 {
-		app.notFound(w)
-		return
+	result := map[string]interface{}{
+		"Posts":    allPosts,
+		"Username": username,
 	}
-
-	post, categories, err := app.posts.Get(id)
+	tmpl, err := template.ParseFiles("ui/html/pages/index.html")
 	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
-		} else {
-			app.serverError(w, r, err)
-		}
+		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+		return
+	}
+	if err = tmpl.Execute(w, result); err != nil {
+		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
 	}
 
-	data := app.newTemplateData(r)
-	data.Post = post
-	data.Categories = categories
-
-	app.render(w, r, http.StatusOK, "view.html", data)
+	ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
+	return
 }
 
-func (app *application) showPostCreate(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-
-	data.Form = postCreateForm{}
-
-	app.render(w, r, http.StatusOK, "create.html", data)
-}
-
-func (app *application) doPostCreate(w http.ResponseWriter, r *http.Request) {
-	//if r.Method != http.MethodPost {
-	//	w.Header().Set("Allow", http.MethodPost)
-	//	app.clientError(w, http.StatusBadRequest)
-	//	return
-	//}
-
-	err := r.ParseForm()
+func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
+	nameFunction := "CreatePost"
+	tmpl, err := template.ParseFiles("ui/html/pages/createPost.html")
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
+		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
 	}
-
-	categories := r.Form["categories[]"]
-	categoryIDs := make([]int, 0, len(categories))
-
-	for _, cid := range categories {
-		id, err := strconv.Atoi(cid)
-		if err != nil {
-			app.clientError(w, http.StatusBadRequest)
+	if r.Method == http.MethodGet {
+		if err := tmpl.Execute(w, nil); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
-		categoryIDs = append(categoryIDs, id)
-	}
-	if len(categoryIDs) == 0 {
-		categoryIDs = append(categoryIDs, 5)
-	}
-	form := postCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Text:        r.PostForm.Get("content"),
-		CategoryIDs: categoryIDs,
-	}
+	} else if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		categories := r.Form["categories"]
 
-	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
-	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
-	form.CheckField(validator.NotBlank(form.Text), "content", "This field cannot be blank")
+		post := models.Post{
+			Title: r.FormValue("title"),
+			Text:  r.FormValue("text"),
+		}
 
-	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Form = form
-		app.render(w, r, http.StatusUnprocessableEntity, "create.html", data)
-		return
+		for _, name := range categories {
+			post.Categories = append(post.Categories, models.Category{Name: name})
+		}
+		if err := pkg.VallidatePost(post); err != nil {
+			ErrorHandlerWithTemplate(tmpl, w, err, http.StatusBadRequest)
+			return
+		}
+		post.AuthorID = user.ID
+		if err := h.service.PostService.CreatePost(post); err != nil {
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
 
-	id, err := app.posts.Insert(1, form.Title, form.Text, form.CategoryIDs)
+func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
+	nameFunction := "getPost"
+	tmpl, err := template.ParseFiles("ui/html/pages/post.html")
 	if err != nil {
-		app.serverError(w, r, err)
+		ErrorHandler(w, http.StatusInternalServerError, "getPost")
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/post/view/%d", id), http.StatusSeeOther)
+	if r.Method == http.MethodGet {
+		idStr := r.URL.Path[len("/posts/"):]
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		post, err := h.service.GetPostByID(id)
+		if err != nil || idStr == "" || len(idStr) > 2 || id > 50 || id <= 0 {
+			ErrorHandler(w, http.StatusNotFound, nameFunction)
+			return
+		}
+		var username string
+		session, err := r.Cookie("session")
+		if err == nil {
+			user, err := h.service.GetUserByToken(session.Value)
+			if err == nil {
+				username = user.Username
+			}
+		}
+		result := map[string]interface{}{
+			"Post":          post,
+			"Authenticated": username,
+		}
+
+		if err = tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, "getPost")
+			return
+		}
+	} else if r.Method == http.MethodPost {
+		idStr := r.URL.Path[len("/posts/"):]
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusUnauthorized, nameFunction)
+			return
+		}
+		user, err := h.service.Auth.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		post, err := h.service.GetPostByID(id)
+		if err != nil {
+			if idStr == "" || len(idStr) > 2 || id > 50 || id <= 0 {
+				ErrorHandler(w, http.StatusNotFound, nameFunction)
+				return
+			}
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		result := map[string]interface{}{
+			"Post":          post,
+			"Authenticated": user.Username,
+		}
+		comment := models.Comment{
+			Text:     r.FormValue("text"),
+			PostID:   id,
+			AuthorID: user.ID,
+		}
+
+		if err := h.service.CreateComment(comment); err != nil {
+			if err == models.ErrEmptyComment || err == models.ErrInvalidComment || err == models.ErrNotAscii {
+				ErrorHandler(w, http.StatusBadRequest, nameFunction)
+				return
+			}
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		if err := tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }

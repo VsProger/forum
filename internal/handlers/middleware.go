@@ -3,7 +3,11 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/VsProger/snippetbox/logger"
 )
+
+var logg = logger.NewLogger()
 
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -17,20 +21,20 @@ func secureHeaders(next http.Handler) http.Handler {
 	})
 }
 
-func (h *Handler) logRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var (
-			ip     = r.RemoteAddr
-			proto  = r.Proto
-			method = r.Method
-			uri    = r.URL.RequestURI()
-		)
+// func (h *Handler) logRequest(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		var (
+// 			ip     = r.RemoteAddr
+// 			proto  = r.Proto
+// 			method = r.Method
+// 			uri    = r.URL.RequestURI()
+// 		)
 
-		app.logger.Info("received request", "ip", ip, "proto", proto, "method", method, "uri", uri)
+// 		app.logger.Info("received request", "ip", ip, "proto", proto, "method", method, "uri", uri)
 
-		next.ServeHTTP(w, r)
-	})
-}
+// 		next.ServeHTTP(w, r)
+// 	})
+// }
 
 func (h *Handler) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +46,13 @@ func (h *Handler) recoverPanic(next http.Handler) http.Handler {
 			}
 		}()
 
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *Handler) AllHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logg.Info(r.Method + " successfully working")
 		next.ServeHTTP(w, r)
 	})
 }

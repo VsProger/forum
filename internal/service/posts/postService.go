@@ -10,6 +10,7 @@ import (
 type PostService interface {
 	CreatePost(post models.Post) error
 	CreateCategory(name string) error
+	GetPosts() ([]models.Post, error)
 }
 
 type postService struct {
@@ -20,6 +21,10 @@ func NewPostService(postRepo posts.Posts) PostService {
 	return &postService{
 		postRepo: postRepo,
 	}
+}
+
+func (s *postService) GetPosts() ([]models.Post, error) {
+	return s.postRepo.GetPosts()
 }
 
 func (s *postService) CreatePost(post models.Post) error {

@@ -12,6 +12,7 @@ type AuthRepo struct {
 
 type Authorization interface {
 	CreateUser(user models.User) error
+	GetUserByToken(token string) (models.User, error)
 }
 
 func NewAuthRepo(db *sql.DB) *AuthRepo {
@@ -28,4 +29,17 @@ func (auth *AuthRepo) CreateUser(user models.User) error {
 		return err
 	}
 	return nil
+}
+
+func (auth *AuthRepo) GetUserByToken(token string) (models.User, error) {
+	query := `SELECT u.ID, u.Email, u.Username, u.Password
+	        FROM Session INNER JOIN User u
+			ON u.ID = Session.UserID
+			WHERE Session.Token = ?`
+	var user models.User
+
+	if err := auth.DB.QueryRow(query, token).Scan(&user.ID, &user.Email, &user.Username, &user.Password); err != nil {
+		return user, err
+	}
+	return user, nil
 }

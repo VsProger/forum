@@ -3,6 +3,7 @@ package posts
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/VsProger/snippetbox/internal/models"
 )
@@ -11,6 +12,9 @@ type Posts interface {
 	CreatePost(post models.Post) error
 	GetCategoryByName(name string) (*models.Category, error)
 	CreateCategory(name string) error
+	GetPostByID(id int) (*models.Post, error)
+	GetPosts() ([]models.Post, error)
+	CreateComment(comment models.Comment) error
 }
 
 type PostRepo struct {
@@ -23,68 +27,71 @@ func NewPostRepo(db *sql.DB) *PostRepo {
 	}
 }
 
-func (m *PostRepo) Insert(authorID int, title string, text string, categoryIDs []int) (int, error) {
-	stmt := `INSERT INTO Posts (AuthorID, Title, Text, LikeCount, DislikeCount, CreationTime)
-    VALUES(?, ?, ?, 0, 0, DATETIME('NOW'))`
+func (r *PostRepo) CreatePost(post models.Post) error {
+	query := `
+	INSERT INTO Post (AuthorID, Title, Text, CreationTime)
+	VALUES (?, ?, ?, datetime('now','+6 hours'));`
 
-	result, err := m.DB.Exec(stmt, authorID, title, text)
+	res, err := r.DB.Exec(query, post.AuthorID, post.Title, post.Text)
 	if err != nil {
-		return 0, err
+		return err
 	}
-
-	postID, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
+	var postID int64
+	if postID, err = res.LastInsertId(); err != nil {
+		return err
 	}
-
-	stmt = `INSERT INTO PostCategory (PostID, CategoryID) VALUES (?, ?)`
-
-	for _, categoryID := range categoryIDs {
-		_, err := m.DB.Exec(stmt, postID, categoryID)
+	for _, category := range post.Categories {
+		_, err := r.DB.Exec(`
+			INSERT INTO PostCategory (PostID, CategoryID)
+			VALUES (?, ?)
+		`, postID, category.ID)
 		if err != nil {
-			return 0, err // Consider transaction rollback logic here
+			return err
 		}
 	}
-
-	return int(postID), nil
+	return nil
 }
 
-func (m *PostRepo) Get(id int) (models.Post, []models.Category, error) {
-	var p models.Post
-
-	// Fetch the post details
-	stmt := `SELECT ID, AuthorID, Title, Text, LikeCount, DislikeCount, CreationTime FROM Posts WHERE ID = ?`
-	err := m.DB.QueryRow(stmt, id).Scan(&p.ID, &p.AuthorID, &p.Title, &p.Text, &p.LikeCount, &p.DislikeCount, &p.CreationTime)
+func (r *PostRepo) GetPosts() ([]models.Post, error) {
+	query := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.CreationTime, u.Username 
+	FROM Post p
+	JOIN User u ON p.AuthorID =u.ID`
+	queryCategories := `SELECT ID, Name FROM Category WHERE ID IN (SELECT CategoryID FROM PostCategory WHERE PostID = ?)`
+	posts := []models.Post{}
+	rows, err := r.DB.Query(query)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return models.Post{}, nil, models.ErrNoRecord
-		} else {
-			return models.Post{}, nil, err
-		}
-	}
-
-	// Fetch the category IDs associated with the post
-	categoryStmt := `SELECT c.ID, c.Name FROM Category AS c JOIN PostCategory AS pc ON c.ID = pc.CategoryID WHERE pc.PostID = ?`
-	rows, err := m.DB.Query(categoryStmt, id)
-	if err != nil {
-		return models.Post{}, nil, err
+		return posts, err
 	}
 	defer rows.Close()
 
-	var categories []models.Category
 	for rows.Next() {
-		var cat models.Category
-		if err := rows.Scan(&cat.ID, &cat.Name); err != nil {
-			return models.Post{}, nil, err
+		post := models.Post{}
+		if err := rows.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.CreationTime, &post.Username); err != nil {
+			return posts, err
 		}
-		categories = append(categories, cat)
+		rows2, err := r.DB.Query(queryCategories, post.ID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting categories for post %d: %w", post.ID, err)
+		}
+		defer rows2.Close()
+
+		var categories []models.Category
+		for rows2.Next() {
+			var category models.Category
+			if err := rows2.Scan(&category.ID, &category.Name); err != nil {
+				return nil, fmt.Errorf("error scanning category: %w", err)
+			}
+			categories = append(categories, category)
+		}
+		if err := rows2.Err(); err != nil {
+			return nil, fmt.Errorf("error iterating over categories: %w", err)
+		}
+
+		post.Categories = categories
+		posts = append(posts, post)
 	}
 
-	if err = rows.Err(); err != nil {
-		return models.Post{}, nil, err
-	}
-
-	return p, categories, nil
+	return posts, rows.Err()
 }
 
 func (m *PostRepo) Latest() ([]models.Post, error) {
@@ -135,4 +142,86 @@ func (r *PostRepo) CreateCategory(name string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *PostRepo) GetPostByID(id int) (*models.Post, error) {
+	queryPost := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.LikeCount, p.DislikeCount, p.CreationTime, u.Username 
+	FROM Post p
+	JOIN User u ON p.AuthorID = u.ID
+	WHERE p.ID = ?;`
+	queryCategories := `SELECT ID, Name FROM Category WHERE ID IN (SELECT CategoryID FROM PostCategory WHERE PostID = ?)`
+
+	post := &models.Post{}
+	err := r.DB.QueryRow(queryPost, id).Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.LikeCount, &post.DislikeCount, &post.CreationTime, &post.Username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("post not found with ID %d", id)
+		}
+		return nil, fmt.Errorf("error scanning post: %w", err)
+	}
+
+	rows, err := r.DB.Query(queryCategories, id)
+	if err != nil {
+		return nil, fmt.Errorf("error getting categories for post %d: %w", id, err)
+	}
+	defer rows.Close()
+
+	var categories []models.Category
+	for rows.Next() {
+		var category models.Category
+		if err := rows.Scan(&category.ID, &category.Name); err != nil {
+			return nil, fmt.Errorf("error scanning category: %w", err)
+		}
+		categories = append(categories, category)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over categories: %w", err)
+	}
+
+	post.Categories = categories
+
+	reactionQuery := `
+    SELECT 
+        COALESCE(SUM(CASE WHEN Vote = 1 THEN 1 ELSE 0 END), 0) as Likes,
+        COALESCE(SUM(CASE WHEN Vote = -1 THEN 1 ELSE 0 END), 0) as Dislikes
+    FROM Reaction WHERE PostID = $1
+    `
+	err = r.DB.QueryRow(reactionQuery, id).Scan(&post.LikeCount, &post.DislikeCount)
+	if err != nil {
+		return post, err
+	}
+	commentsQuery := `
+	SELECT 
+		c.Id, c.Text, c.PostID, c.AuthorID, u.Username,
+		COALESCE(SUM(CASE WHEN r.Vote = 1 THEN 1 ELSE 0 END), 0) as Likes,
+		COALESCE(SUM(CASE WHEN r.Vote = -1 THEN 1 ELSE 0 END), 0) as Dislikes
+	FROM Comment c
+	JOIN User u ON c.AuthorID = u.ID
+	LEFT JOIN Reaction r ON c.ID = r.CommentID
+	WHERE c.PostID = $1
+	GROUP BY c.ID, u.Username, c.Text, c.PostID, c.AuthorID
+	`
+	rows, err = r.DB.Query(commentsQuery, id)
+	if err != nil {
+		return post, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var comment models.Comment
+		if err := rows.Scan(&comment.ID, &comment.Text, &comment.PostID, &comment.AuthorID, &comment.Username, &comment.LikeCount, &comment.DislikeCount); err != nil {
+			return post, err
+		}
+		post.Comment = append(post.Comment, comment)
+	}
+	if err = rows.Err(); err != nil {
+		return post, err
+	}
+	return post, nil
+}
+
+func (p *PostRepo) CreateComment(comment models.Comment) error {
+	query := "INSERT INTO Comment (AuthorID, PostID, Text, Username) VALUES ($1, $2, $3, $4)"
+	_, err := p.DB.Exec(query, comment.AuthorID, comment.PostID, comment.Text, comment.Username)
+	fmt.Println(err)
+	return err
 }

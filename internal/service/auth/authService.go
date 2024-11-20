@@ -7,6 +7,7 @@ import (
 
 type Auth interface {
 	CreateUser(user models.User) error
+	GetUserByToken(token string) (models.User, error)
 }
 
 type AuthService struct {
@@ -25,4 +26,12 @@ func (a *AuthService) CreateUser(user models.User) error {
 		return err
 	}
 	return a.repo.CreateUser(user)
+}
+
+func (a *AuthService) GetUserByToken(token string) (models.User, error) {
+	user, err := a.repo.GetUserByToken(token)
+	if err != nil {
+		return user, nil
+	}
+	return user, nil
 }

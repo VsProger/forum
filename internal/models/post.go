@@ -11,6 +11,15 @@ type Post struct {
 	Text         string
 	LikeCount    int
 	DislikeCount int
+	Username     string
 	CreationTime time.Time
-	CategoryID   int
+	CategoryId   []int
+	Comment      []Comment
+	Categories   []Category
+	Category     string
+}
+
+type Category struct {
+	ID   int
+	Name string
 }
