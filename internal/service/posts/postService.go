@@ -5,12 +5,15 @@ import (
 
 	"github.com/VsProger/snippetbox/internal/models"
 	"github.com/VsProger/snippetbox/internal/repository/posts"
+	"github.com/VsProger/snippetbox/pkg"
 )
 
 type PostService interface {
 	CreatePost(post models.Post) error
 	CreateCategory(name string) error
+	GetPostByID(id int) (*models.Post, error)
 	GetPosts() ([]models.Post, error)
+	CreateComment(comment models.Comment) error
 }
 
 type postService struct {
@@ -42,6 +45,10 @@ func (s *postService) CreatePost(post models.Post) error {
 	return s.postRepo.CreatePost(post)
 }
 
+func (s *postService) GetPostByID(id int) (*models.Post, error) {
+	return s.postRepo.GetPostByID(id)
+}
+
 func (s *postService) CreateCategory(name string) error {
 	if name == "" {
 		return errors.New("Name should be be empty!")
@@ -56,4 +63,11 @@ func (s *postService) CreateCategory(name string) error {
 	}
 
 	return nil
+}
+
+func (s *postService) CreateComment(comment models.Comment) error {
+	if err := pkg.ValidateComment(comment); err != nil {
+		return err
+	}
+	return s.postRepo.CreateComment(comment)
 }

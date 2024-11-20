@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/VsProger/snippetbox/logger"
@@ -35,20 +34,6 @@ func secureHeaders(next http.Handler) http.Handler {
 // 		next.ServeHTTP(w, r)
 // 	})
 // }
-
-func (h *Handler) recoverPanic(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				w.Header().Set("Connection", "close")
-
-				app.serverError(w, r, fmt.Errorf("%s", err))
-			}
-		}()
-
-		next.ServeHTTP(w, r)
-	})
-}
 
 func (h *Handler) AllHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
