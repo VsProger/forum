@@ -7,8 +7,8 @@ func (h *Handler) Router() http.Handler {
 	mux.Handle("/ui/static/", http.StripPrefix("/ui/static/", http.FileServer(http.Dir("./ui/static"))))
 
 	mux.HandleFunc("/", h.home)
-	// mux.HandleFunc("/login", h.login)
-	// mux.HandleFunc("/register", h.register)
+	mux.HandleFunc("/login", h.login)
+	mux.HandleFunc("/register", h.register)
 	// mux.HandleFunc("/logout", h.AuthorizationMid(h.logout))
 
 	mux.HandleFunc("/posts/create", h.createPost)

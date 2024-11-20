@@ -105,10 +105,11 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "Register"
 	if r.URL.Path != "/register" {
+
 		ErrorHandler(w, http.StatusNotFound, nameFunction)
 		return
 	}
-	tmpl, err := template.ParseFiles("ui/html/pages/signup.html")
+	tmpl, err := template.ParseFiles("/home/student/Desktop/forum/ui/html/pages/signup.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
@@ -131,7 +132,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email already used"), http.StatusBadRequest)
 			return
 		}
-		checkUser, _ = h.service.GetUserByUSername(user.Username)
+		checkUser, _ = h.service.GetUserByUsername(user.Username)
 		if checkUser.Username == user.Username {
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Username already used"), http.StatusBadRequest)
 			return
