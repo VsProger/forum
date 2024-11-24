@@ -9,7 +9,7 @@ func (h *Handler) Router() http.Handler {
 	mux.HandleFunc("/", h.home)
 	mux.HandleFunc("/login", h.login)
 	mux.HandleFunc("/register", h.register)
-	// mux.HandleFunc("/logout", h.AuthorizationMid(h.logout))
+	mux.HandleFunc("/logout", h.logout)
 
 	mux.HandleFunc("/posts/create", h.createPost)
 
