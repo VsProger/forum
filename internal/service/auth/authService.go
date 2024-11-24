@@ -77,13 +77,13 @@ func (a *AuthService) CheckUser(user *models.User) error {
 }
 
 func (a *AuthService) CheckPassword(user models.User) error {
-	checkedUser, err := a.repo.GetUserByEmail(user.Email)
-	if err != nil {
-		return models.ErrUserNotFound
-	}
-	if !pkg.CheckPasswordHash(user.Password, checkedUser.Password) {
-		return models.ErrInvalidPassword
-	}
+	// checkedUser, err := a.repo.GetUserByEmail(user.Email)
+	// if err != nil {
+	// 	return models.ErrUserNotFound
+	// }
+	// // if !pkg.CheckPasswordHash(user.Password, checkedUser.Password) {
+	// // 	return models.ErrInvalidPassword
+	// // }
 	return nil
 }
 

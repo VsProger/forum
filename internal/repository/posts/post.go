@@ -146,7 +146,7 @@ func (r *PostRepo) CreateCategory(name string) error {
 
 func (r *PostRepo) GetPostByID(id int) (*models.Post, error) {
 	queryPost := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.LikeCount, p.DislikeCount, p.CreationTime, u.Username 
-	FROM Post p
+	FROM Posts p
 	JOIN User u ON p.AuthorID = u.ID
 	WHERE p.ID = ?;`
 	queryCategories := `SELECT ID, Name FROM Category WHERE ID IN (SELECT CategoryID FROM PostCategory WHERE PostID = ?)`
