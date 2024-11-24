@@ -30,6 +30,8 @@ func (f *FilterRepo) GetPostsByCategories(categories []int) ([]models.Post, erro
 		}
 		inParams += "?"
 	}
+
+	// Prepare the query with placeholders
 	query := fmt.Sprintf(`
     SELECT p.ID, p.Title, p.Text, p.CreationTime, p.AuthorID, u.Username, 
            GROUP_CONCAT(c.Name) as Categories
@@ -40,16 +42,22 @@ func (f *FilterRepo) GetPostsByCategories(categories []int) ([]models.Post, erro
     WHERE pc.CategoryID IN (%s)
     GROUP BY p.ID, p.Title, p.Text, p.CreationTime, p.AuthorID, u.Username
 	`, inParams)
+
+	// Create the args slice as []interface{}
 	args := make([]interface{}, len(categories))
 	for i, v := range categories {
 		args[i] = v
 	}
+
+	// Instead of using args..., pass args directly as a slice
 	result := []models.Post{}
-	rows, err := f.DB.Query(query, args...)
+	rows, err := f.DB.Query(query, args) // Pass args as a single slice, not spread
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
+	// Iterate through the results and scan them into the result slice
 	for rows.Next() {
 		var post models.Post
 		if err := rows.Scan(&post.ID, &post.Title, &post.Text, &post.CreationTime, &post.AuthorID, &post.Username, &post.Category); err != nil {
@@ -61,9 +69,12 @@ func (f *FilterRepo) GetPostsByCategories(categories []int) ([]models.Post, erro
 		}
 		result = append(result, post)
 	}
+
+	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return result, nil
 }
 
