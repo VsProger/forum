@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/ui/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
-    <title>Music Forum</title>
+    <title>Cinema Forum</title>
 </head>
 <body>
     <header>
-        <div class="header__marquee-container"> <!-- Обертка для анимации -->
-            <a href="/" class="music"><h1 class="header__title">Music Forum          Music Forum          Music Forum          Music Forum     Music Forum     Music Forum     Music Forum     Music Forum</h1> <!-- Добавлены несколько слов "Music Forum" --></a>
-            
-        </div>
+
         <nav>
             {{if .Username}}
             <a href="/posts/create" class="button-link">Create Post</a>
@@ -39,19 +36,19 @@
                     <input type="checkbox" name="categories" value="Rock">
                     <span class="filter-checkbox"></span> 
                     <img src="/ui/static/img/rock.png" alt="Rock Icon">
-                    <span class="filter-label">Rock</span>
+                    <span class="filter-label">Detective</span>
                 </label>
                 <label class="filter-option">
                     <input type="checkbox" name="categories" value="Jazz">
                     <span class="filter-checkbox"></span> 
                     <img src="/ui/static/img/jazz.png" alt="jazz Icon">
-                    <span class="filter-label">Jazz</span>
+                    <span class="filter-label">Horror</span>
                 </label>
                 <label class="filter-option">
                     <input type="checkbox" name="categories" value="Hip-Hop">
                     <span class="filter-checkbox"></span>
                     <img src="/ui/static/img/hip-hop.png" alt="Hip-hop Icon"> 
-                    <span class="filter-label">Hip-Hop</span>
+                    <span class="filter-label">Comedy</span>
                 </label>
                 <label class="filter-option">
                     <input type="checkbox" name="categories" value="Other">

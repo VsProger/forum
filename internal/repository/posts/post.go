@@ -15,6 +15,7 @@ type Posts interface {
 	GetPostByID(id int) (*models.Post, error)
 	GetPosts() ([]models.Post, error)
 	CreateComment(comment models.Comment) error
+	GetAllPostsByUserId(id int) ([]models.Post, error)
 }
 
 type PostRepo struct {
@@ -29,7 +30,7 @@ func NewPostRepo(db *sql.DB) *PostRepo {
 
 func (r *PostRepo) CreatePost(post models.Post) error {
 	query := `
-	INSERT INTO Post (AuthorID, Title, Text, CreationTime)
+	INSERT INTO Posts (AuthorID, Title, Text, CreationTime)
 	VALUES (?, ?, ?, datetime('now','+6 hours'));`
 
 	res, err := r.DB.Exec(query, post.AuthorID, post.Title, post.Text)
@@ -224,4 +225,55 @@ func (p *PostRepo) CreateComment(comment models.Comment) error {
 	_, err := p.DB.Exec(query, comment.AuthorID, comment.PostID, comment.Text, comment.Username)
 	fmt.Println(err)
 	return err
+}
+
+func (r *PostRepo) GetAllPostsByUserId(id int) ([]models.Post, error) {
+	queryPost := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.LikeCount, p.DislikeCount, p.CreationTime, u.Username 
+	FROM Posts p
+	JOIN User u ON p.AuthorID = u.ID
+	WHERE p.AuthorID = ? ORDER BY CreationTime DESC;`
+
+	queryCategories := `SELECT ID, Name FROM Category WHERE ID IN (SELECT CategoryID FROM PostCategory WHERE PostID = ?)`
+	rows, err := r.DB.Query(queryPost, id)
+	if err != nil {
+		return nil, fmt.Errorf("error getting posts %d: %w", id, err)
+	}
+	defer rows.Close()
+
+	var posts []models.Post
+	for rows.Next() {
+		var post models.Post
+		err := rows.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.LikeCount, &post.DislikeCount, &post.CreationTime, &post.Username)
+		if err != nil {
+
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, fmt.Errorf("post not found with ID %d", id)
+			}
+			return nil, fmt.Errorf("error scanning post: %w", err)
+		}
+		rows2, err := r.DB.Query(queryCategories, post.ID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting categories for post %d: %w", id, err)
+		}
+		defer rows2.Close()
+
+		var categories []models.Category
+		for rows2.Next() {
+			var category models.Category
+			if err := rows2.Scan(&category.ID, &category.Name); err != nil {
+				return nil, fmt.Errorf("error scanning category: %w", err)
+			}
+			categories = append(categories, category)
+		}
+		if err := rows2.Err(); err != nil {
+			return nil, fmt.Errorf("error iterating over categories: %w", err)
+		}
+
+		post.Categories = categories
+		posts = append(posts, post)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return posts, nil
 }

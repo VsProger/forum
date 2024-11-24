@@ -14,6 +14,7 @@ type PostService interface {
 	GetPostByID(id int) (*models.Post, error)
 	GetPosts() ([]models.Post, error)
 	CreateComment(comment models.Comment) error
+	GetPostsByUserId(user_id int) ([]models.Post, error)
 }
 
 type postService struct {
@@ -31,16 +32,16 @@ func (s *postService) GetPosts() ([]models.Post, error) {
 }
 
 func (s *postService) CreatePost(post models.Post) error {
-	// if len(post.Categories) == 0 {
-	// 	post.Categories[0] = models.Category{Name: "Other"}
-	// }
-	// for i, category := range post.Categories {
-	// 	t, err := s.postRepo.GetCategoryByName(category.Name)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	post.Categories[i] = *t
-	// }
+	if len(post.Categories) == 0 {
+		post.Categories[0] = models.Category{Name: "Other"}
+	}
+	for i, category := range post.Categories {
+		t, err := s.postRepo.GetCategoryByName(category.Name)
+		if err != nil {
+			return err
+		}
+		post.Categories[i] = *t
+	}
 
 	return s.postRepo.CreatePost(post)
 }
@@ -70,4 +71,12 @@ func (s *postService) CreateComment(comment models.Comment) error {
 		return err
 	}
 	return s.postRepo.CreateComment(comment)
+}
+
+func (s *postService) GetPostsByUserId(user_id int) ([]models.Post, error) {
+	posts, err := s.postRepo.GetAllPostsByUserId(user_id)
+	if err != nil {
+		return posts, err
+	}
+	return posts, nil
 }
