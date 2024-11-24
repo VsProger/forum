@@ -16,6 +16,7 @@ type Auth interface {
 	GetUserByUsername(username string) (models.User, error)
 	CheckPassword(user models.User) error
 	SetSession(user *models.User) (string, error)
+	DeleteSession(token string) error
 }
 
 type AuthService struct {
@@ -99,4 +100,8 @@ func (a *AuthService) SetSession(user *models.User) (string, error) {
 		return "hui", err
 	}
 	return session.Token, nil
+}
+
+func (a *AuthService) DeleteSession(token string) error {
+	return a.repo.DeleteSession(token)
 }

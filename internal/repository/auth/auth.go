@@ -18,6 +18,7 @@ type Authorization interface {
 	DeleteSessionByUserID(userID int) error
 	CreateSession(sessions models.Session) error
 	GetUserByID(id int) (models.User, error)
+	DeleteSession(token string) error
 }
 
 func NewAuthRepo(db *sql.DB) *AuthRepo {
@@ -100,4 +101,14 @@ func (auth *AuthRepo) GetUserByID(id int) (models.User, error) {
 		return models.User{}, err
 	}
 	return user, nil
+}
+
+func (auth *AuthRepo) DeleteSession(token string) error {
+	query := `DELETE FROM Session WHERE Token = ?`
+
+	_, err := auth.DB.Exec(query, token)
+	if err != nil {
+		return err
+	}
+	return nil
 }

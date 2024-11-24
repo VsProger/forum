@@ -151,3 +151,32 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
 	}
 }
+
+func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
+	nameFunction := "Logout"
+	if r.URL.Path != "/logout" {
+		ErrorHandler(w, http.StatusNotFound, nameFunction)
+		return
+	}
+	switch r.Method {
+	case "GET":
+		sessionCookie, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		if err := h.service.Auth.DeleteSession(sessionCookie.Value); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session",
+			Value:  "",
+			MaxAge: -1,
+		})
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	default:
+		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
+		return
+	}
+}
