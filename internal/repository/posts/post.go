@@ -32,50 +32,37 @@ func NewPostRepo(db *sql.DB) *PostRepo {
 }
 
 func (r *PostRepo) CreatePost(post models.Post) error {
-	// Начало транзакции
 	tx, err := r.DB.Begin()
 	if err != nil {
-		log.Printf("ошибка начала транзакции: %v", err)
-		return fmt.Errorf("ошибка начала транзакции: %w", err)
+		log.Printf("error starting transaction: %v", err)
+		return fmt.Errorf("error starting transaction: %w", err)
 	}
-	defer tx.Rollback() // Если что-то пойдет не так, транзакция будет отменена
+	defer tx.Rollback()
 
-	// Подготовка запроса на вставку данных в таблицу Posts
 	query := `
 	INSERT INTO Posts (AuthorID, Title, Text, CreationTime)
 	VALUES (?, ?, ?, datetime('now','+6 hours'));`
-
-	// Выполнение запроса на вставку в рамках транзакции
 	res, err := tx.Exec(query, post.AuthorID, post.Title, post.Text)
 	if err != nil {
-		log.Printf("ошибка выполнения запроса на вставку: %v", err)
-		return fmt.Errorf("ошибка выполнения запроса на вставку: %w", err)
+		log.Printf("error inserting post: %v", err)
+		return fmt.Errorf("error inserting post: %w", err)
 	}
 
-	// Получение последнего вставленного ID
-	var postID int64
-	postID, err = res.LastInsertId()
-	if err != nil {
-		log.Printf("ошибка получения последнего вставленного ID: %v", err)
-		return fmt.Errorf("ошибка получения последнего вставленного ID: %w", err)
-	}
-
-	// Вставка категорий в таблицу PostCategory в рамках транзакции
+	postID, err := res.LastInsertId()
 	for _, category := range post.Categories {
 		_, err := tx.Exec(`
 			INSERT INTO PostCategory (PostID, CategoryID)
 			VALUES (?, ?)
 		`, postID, category.ID)
 		if err != nil {
-			log.Printf("ошибка вставки категории в таблицу PostCategory: %v", err)
-			return fmt.Errorf("ошибка вставки категории в таблицу PostCategory: %w", err)
+			log.Printf("error inserting category: %v", err)
+			return fmt.Errorf("error inserting category: %w", err)
 		}
 	}
 
-	// Если все успешно, коммитим транзакцию
 	if err := tx.Commit(); err != nil {
-		log.Printf("ошибка коммита транзакции: %v", err)
-		return fmt.Errorf("ошибка коммита транзакции: %w", err)
+		log.Printf("error committing transaction: %v", err)
+		return fmt.Errorf("error committing transaction: %w", err)
 	}
 
 	return nil
