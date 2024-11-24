@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"forum/internal/models"
 	"html/template"
 	"net/http"
+
+	"github.com/VsProger/snippetbox/internal/models"
 )
 
 func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
