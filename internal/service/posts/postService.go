@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"log"
 
 	"github.com/VsProger/snippetbox/internal/models"
 	"github.com/VsProger/snippetbox/internal/repository/posts"
@@ -38,6 +39,7 @@ func (s *postService) CreatePost(post models.Post) error {
 	for i, category := range post.Categories {
 		t, err := s.postRepo.GetCategoryByName(category.Name)
 		if err != nil {
+			log.Fatal(err)
 			return err
 		}
 		post.Categories[i] = *t

@@ -2,10 +2,47 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/VsProger/snippetbox/internal/models"
 )
+
+func (h *Handler) likePostsByUser(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("ui/html/pages/home.html")
+	if err != nil {
+		ErrorHandler(w, http.StatusInternalServerError, "likePosts")
+		return
+	}
+	if r.Method == http.MethodGet {
+		nameFunction := "likePosts"
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		posts, err := h.service.FilterByLikes(user.ID)
+		if err != nil {
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		result := map[string]interface{}{
+			"Posts":    posts,
+			"Username": user.Username,
+		}
+		if err = tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, "likePosts")
+			return
+		}
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
 
 func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "filterByCategory"
@@ -15,8 +52,9 @@ func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
+		tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
 		if err != nil {
+
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -30,6 +68,7 @@ func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if err := r.ParseForm(); err != nil {
+			log.Print(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -39,12 +78,14 @@ func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 		}
 		category, err := h.service.GetCategoryByName(categories)
 		if err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
 
 		posts, err := h.service.FilterByCategories(category)
 		if err != nil {
+			log.Print(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -54,6 +95,7 @@ func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := tmpl.Execute(w, result); err != nil {
+
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}

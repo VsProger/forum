@@ -35,9 +35,9 @@ func (app *App) Run() error {
 	service := service.NewService(repo)
 
 	logger.Info("Service working...")
-	service.PostService.CreateCategory("IT")
-	service.PostService.CreateCategory("Economy")
-	service.PostService.CreateCategory("Medicine")
+	service.PostService.CreateCategory("Detective")
+	service.PostService.CreateCategory("Horror")
+	service.PostService.CreateCategory("Comedy")
 	service.PostService.CreateCategory("Other")
 
 	handler := handlers.NewHandler(service)

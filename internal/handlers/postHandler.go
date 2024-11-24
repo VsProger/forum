@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -52,6 +53,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		}
 		post.AuthorID = user.ID
 		if err := h.service.PostService.CreatePost(post); err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -144,6 +146,43 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		if err := tmpl.Execute(w, result); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
+	if err != nil {
+		ErrorHandler(w, http.StatusInternalServerError, "getPost")
+		return
+	}
+	if r.Method == http.MethodGet {
+		nameFunction := "userPosts"
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		posts, err := h.service.GetPostsByUserId(user.ID)
+		if err != nil {
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		result := map[string]interface{}{
+			"Posts":    posts,
+			"Username": user.Username,
+		}
+		if err = tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, "userPosts")
 			return
 		}
 	} else {

@@ -12,6 +12,9 @@ func (h *Handler) Router() http.Handler {
 	mux.HandleFunc("/logout", h.logout)
 	mux.HandleFunc("/posts/", h.getPost)
 	mux.HandleFunc("/posts/create", h.createPost)
+	mux.HandleFunc("/myposts", h.userPosts)
+	mux.HandleFunc("/filter", h.filterByCategory)
+	mux.HandleFunc("/mylikedposts", h.likePostsByUser)
 
 	return h.AllHandler(mux)
 }

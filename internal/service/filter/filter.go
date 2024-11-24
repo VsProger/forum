@@ -2,8 +2,9 @@ package filter
 
 import (
 	"errors"
-	"forum/internal/models"
-	"forum/internal/repository/filter"
+
+	"github.com/VsProger/snippetbox/internal/models"
+	filter "github.com/VsProger/snippetbox/internal/repository/filter"
 )
 
 type FilterService struct {

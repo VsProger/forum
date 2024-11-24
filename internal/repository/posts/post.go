@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/VsProger/snippetbox/internal/models"
 )
@@ -29,27 +30,52 @@ func NewPostRepo(db *sql.DB) *PostRepo {
 }
 
 func (r *PostRepo) CreatePost(post models.Post) error {
+	// Начало транзакции
+	tx, err := r.DB.Begin()
+	if err != nil {
+		log.Printf("ошибка начала транзакции: %v", err)
+		return fmt.Errorf("ошибка начала транзакции: %w", err)
+	}
+	defer tx.Rollback() // Если что-то пойдет не так, транзакция будет отменена
+
+	// Подготовка запроса на вставку данных в таблицу Posts
 	query := `
 	INSERT INTO Posts (AuthorID, Title, Text, CreationTime)
 	VALUES (?, ?, ?, datetime('now','+6 hours'));`
 
-	res, err := r.DB.Exec(query, post.AuthorID, post.Title, post.Text)
+	// Выполнение запроса на вставку в рамках транзакции
+	res, err := tx.Exec(query, post.AuthorID, post.Title, post.Text)
 	if err != nil {
-		return err
+		log.Printf("ошибка выполнения запроса на вставку: %v", err)
+		return fmt.Errorf("ошибка выполнения запроса на вставку: %w", err)
 	}
+
+	// Получение последнего вставленного ID
 	var postID int64
-	if postID, err = res.LastInsertId(); err != nil {
-		return err
+	postID, err = res.LastInsertId()
+	if err != nil {
+		log.Printf("ошибка получения последнего вставленного ID: %v", err)
+		return fmt.Errorf("ошибка получения последнего вставленного ID: %w", err)
 	}
+
+	// Вставка категорий в таблицу PostCategory в рамках транзакции
 	for _, category := range post.Categories {
-		_, err := r.DB.Exec(`
+		_, err := tx.Exec(`
 			INSERT INTO PostCategory (PostID, CategoryID)
 			VALUES (?, ?)
 		`, postID, category.ID)
 		if err != nil {
-			return err
+			log.Printf("ошибка вставки категории в таблицу PostCategory: %v", err)
+			return fmt.Errorf("ошибка вставки категории в таблицу PostCategory: %w", err)
 		}
 	}
+
+	// Если все успешно, коммитим транзакцию
+	if err := tx.Commit(); err != nil {
+		log.Printf("ошибка коммита транзакции: %v", err)
+		return fmt.Errorf("ошибка коммита транзакции: %w", err)
+	}
+
 	return nil
 }
 
