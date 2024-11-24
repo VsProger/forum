@@ -225,8 +225,8 @@ func (h *Handler) addReaction(w http.ResponseWriter, r *http.Request) {
 		}
 		reaction := models.Reaction{
 			UserID:    user.ID,
-			PostID:    &postId,
-			CommentID: &commentId,
+			PostID:    postId,
+			CommentID: commentId,
 			Vote:      vote,
 		}
 		if err := h.service.AddReaction(reaction); err != nil {

@@ -87,11 +87,11 @@ func (s *postService) GetPostsByUserId(user_id int) ([]models.Post, error) {
 
 func (s *postService) AddReaction(reaction models.Reaction) error {
 	switch {
-	case reaction.PostID != nil && reaction.CommentID == nil:
+	case reaction.PostID != 0 && reaction.CommentID == 0:
 		if err := s.postRepo.AddReactionToPost(reaction); err != nil {
 			return fmt.Errorf("Error adding or updating reaction: %v", err)
 		}
-	case reaction.CommentID != nil && reaction.PostID != nil:
+	case reaction.CommentID != 0 && reaction.PostID != 0:
 		if err := s.postRepo.AddReactionToComment(reaction); err != nil {
 			fmt.Println("HEREE")
 			return err
