@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/VsProger/snippetbox/internal/models"
@@ -16,6 +17,7 @@ type PostService interface {
 	GetPosts() ([]models.Post, error)
 	CreateComment(comment models.Comment) error
 	GetPostsByUserId(user_id int) ([]models.Post, error)
+	AddReaction(reaction models.Reaction) error
 }
 
 type postService struct {
@@ -81,4 +83,21 @@ func (s *postService) GetPostsByUserId(user_id int) ([]models.Post, error) {
 		return posts, err
 	}
 	return posts, nil
+}
+
+func (s *postService) AddReaction(reaction models.Reaction) error {
+	switch {
+	case reaction.PostID != nil && reaction.CommentID == nil:
+		if err := s.postRepo.AddReactionToPost(reaction); err != nil {
+			return fmt.Errorf("Error adding or updating reaction: %v", err)
+		}
+	case reaction.CommentID != nil && reaction.PostID != nil:
+		if err := s.postRepo.AddReactionToComment(reaction); err != nil {
+			fmt.Println("HEREE")
+			return err
+		}
+	default:
+		return fmt.Errorf("specify either PostId or CommentId, not both")
+	}
+	return nil
 }

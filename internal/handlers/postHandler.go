@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/VsProger/snippetbox/internal/models"
 	"github.com/VsProger/snippetbox/pkg"
@@ -187,5 +189,61 @@ func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *Handler) addReaction(w http.ResponseWriter, r *http.Request) {
+	nameFunction := "addReaction"
+	if r.Method == http.MethodPost {
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		user, err := h.service.Auth.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		postId, err := pkg.Atoi(r.FormValue("postId"))
+		if err != nil {
+			ErrorHandler(w, http.StatusNotFound, nameFunction)
+			return
+		}
+		var commentId int
+		if r.FormValue("commentId") != "" {
+			commentId, err = pkg.Atoi(r.FormValue("commentId"))
+			if err != nil {
+				ErrorHandler(w, http.StatusBadRequest, nameFunction)
+				return
+			}
+		}
+		vote, err := pkg.Atoi(r.FormValue("status"))
+		if err != nil {
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		reaction := models.Reaction{
+			UserID:    user.ID,
+			PostID:    &postId,
+			CommentID: &commentId,
+			Vote:      vote,
+		}
+		if err := h.service.AddReaction(reaction); err != nil {
+			if err == fmt.Errorf("specify either PostId or CommentId, not both") || strings.Contains(err.Error(), "Vote IN (-1, 1)") {
+				ErrorHandler(w, http.StatusBadRequest, nameFunction)
+				return
+			} else if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
+				ErrorHandler(w, http.StatusNotFound, nameFunction)
+				return
+			}
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		path := "/posts/" + r.FormValue("postId")
+		http.Redirect(w, r, path, http.StatusSeeOther)
+	} else {
+		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
+		return
 	}
 }

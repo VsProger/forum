@@ -17,6 +17,8 @@ type Posts interface {
 	GetPosts() ([]models.Post, error)
 	CreateComment(comment models.Comment) error
 	GetAllPostsByUserId(id int) ([]models.Post, error)
+	AddReactionToPost(reaction models.Reaction) error
+	AddReactionToComment(reaction models.Reaction) error
 }
 
 type PostRepo struct {
@@ -302,4 +304,78 @@ func (r *PostRepo) GetAllPostsByUserId(id int) ([]models.Post, error) {
 		return nil, err
 	}
 	return posts, nil
+}
+
+func (p *PostRepo) AddReactionToPost(reaction models.Reaction) error {
+	var existingreaction int
+	var existingreactionId int
+	err := p.DB.QueryRow(`
+        SELECT ID, Vote FROM Reaction 
+        WHERE UserID = $1 AND PostID = $2`,
+		reaction.UserID,
+		reaction.PostID,
+	).Scan(&existingreactionId, &existingreaction)
+	if err == sql.ErrNoRows {
+		_, err := p.DB.Exec(`
+            INSERT INTO Reaction (UserID, PostID, Vote) 
+            VALUES ($1, $2, $3)`,
+			reaction.UserID,
+			reaction.PostID,
+			reaction.Vote,
+		)
+		return err
+	} else if err != nil {
+		return err
+	} else {
+		if existingreaction == reaction.Vote {
+			_, err := p.DB.Exec("DELETE FROM Reaction WHERE ID = $1", existingreactionId)
+			return err
+		} else {
+			_, err := p.DB.Exec(`
+                UPDATE Reaction 
+                SET Vote = $1 
+                WHERE ID = $2`,
+				reaction.Vote,
+				existingreactionId,
+			)
+			return err
+		}
+	}
+}
+
+func (p *PostRepo) AddReactionToComment(reaction models.Reaction) error {
+	var existingreaction int
+	var existingreactionId int
+	err := p.DB.QueryRow(`
+        SELECT ID, Vote FROM Reaction 
+        WHERE UserID = $1 AND CommentID = $2`,
+		reaction.UserID,
+		reaction.CommentID,
+	).Scan(&existingreactionId, &existingreaction)
+	if err == sql.ErrNoRows {
+		_, err := p.DB.Exec(`
+            INSERT INTO Reaction (UserID, CommentID, Vote) 
+            VALUES ($1, $2, $3)`,
+			reaction.UserID,
+			reaction.CommentID,
+			reaction.Vote,
+		)
+		return err
+	} else if err != nil {
+		return err
+	} else {
+		if existingreaction == reaction.Vote {
+			_, err := p.DB.Exec("DELETE FROM Reaction WHERE ID = $1", existingreactionId)
+			return err
+		} else {
+			_, err := p.DB.Exec(`
+                UPDATE Reaction 
+                SET Vote = $1 
+                WHERE ID = $2`,
+				reaction.Vote,
+				existingreactionId,
+			)
+			return err
+		}
+	}
 }

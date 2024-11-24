@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -163,4 +164,15 @@ func GenerateToken() string {
 		log.Print(err)
 	}
 	return u.String()
+}
+
+func Atoi(s string) (int, error) {
+	if strings.TrimLeft(s, "0") != s || strings.Contains(s, "+") {
+		return 0, ErrWordsLength
+	}
+	if num, err := strconv.Atoi(s); err == nil {
+		return num, nil
+	} else {
+		return 0, err
+	}
 }
