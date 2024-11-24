@@ -11,7 +11,7 @@ import (
 
 type Posts interface {
 	CreatePost(post models.Post) error
-	GetCategoryByName(name string) (*models.Category, error)
+	GetCategoryByName(name string) ([]*models.Category, error)
 	CreateCategory(name string) error
 	GetPostByID(id int) (*models.Post, error)
 	GetPosts() ([]models.Post, error)
@@ -138,17 +138,32 @@ func (m *PostRepo) Latest() ([]models.Post, error) {
 	return posts, nil
 }
 
-func (r *PostRepo) GetCategoryByName(name string) (*models.Category, error) {
+func (r *PostRepo) GetCategoryByName(name string) ([]*models.Category, error) {
 	query := `
 	SELECT ID, Name
 	FROM Category
 	WHERE Name = ?`
-	row := r.DB.QueryRow(query, name)
-	category := models.Category{}
-	if err := row.Scan(&category.ID, &category.Name); err != nil {
+	rows, err := r.DB.Query(query, name)
+	if err != nil {
 		return nil, err
 	}
-	return &category, nil
+	defer rows.Close() // Ensure the rows are closed after we're done with them
+
+	var categories []*models.Category
+	for rows.Next() {
+		category := &models.Category{}
+		if err := rows.Scan(&category.ID, &category.Name); err != nil {
+			return nil, err
+		}
+		categories = append(categories, category)
+	}
+
+	// Check if there was an error during iteration
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return categories, nil
 }
 
 func (r *PostRepo) CreateCategory(name string) error {

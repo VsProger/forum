@@ -34,10 +34,29 @@ func (s *postService) GetPosts() ([]models.Post, error) {
 }
 
 func (s *postService) CreatePost(post models.Post) error {
+	// If no categories are provided, add a default one
 	if len(post.Categories) == 0 {
-		post.Categories[0] = models.Category{Name: "Other"}
+		post.Categories = append(post.Categories, models.Category{Name: "Other"})
 	}
 
+	// Iterate through the categories provided in the post
+	for i, category := range post.Categories {
+		// Call GetCategoryByName to retrieve the category details
+		categories, err := s.postRepo.GetCategoryByName(category.Name)
+		if err != nil {
+			return err
+		}
+
+		// If no category is found, return an error
+		if len(categories) == 0 {
+			return fmt.Errorf("category %s not found", category.Name)
+		}
+
+		// Assuming you want to use the first matching category
+		post.Categories[i] = *categories[0]
+	}
+
+	// Now, save the post with its categories
 	return s.postRepo.CreatePost(post)
 }
 

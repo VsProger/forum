@@ -33,11 +33,13 @@
 
                 <div class="error">{{ .ErrorText }}</div>
 
-                    <h2>Genre:</h2>
-                    <label><input type="checkbox" name="categories" value="Rock">Detective</label>
-                    <label><input type="checkbox" name="categories" value="Hip-Hop">Horror</label>
-                    <label><input type="checkbox" name="categories" value="Jazz">Comedy</label>
-                    <label ><input type="checkbox" name="categories" value="Other">Other</label> 
+                <h2>Genre:</h2>
+                <!-- Change checkboxes to radio buttons -->
+                <label><input type="radio" name="categories" value="Detective" required>Detective</label><br>
+                <label><input type="radio" name="categories" value="Horror" required>Horror</label><br>
+                <label><input type="radio" name="categories" value="Comedy" required>Comedy</label><br>
+                <label><input type="radio" name="categories" value="Other" required>Other</label><br>
+
                 <button type="submit">Create Post</button>
             </form>
         </section>
