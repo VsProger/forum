@@ -17,6 +17,7 @@ type Authorization interface {
 	GetUserByUsername(username string) (models.User, error)
 	DeleteSessionByUserID(userID int) error
 	CreateSession(sessions models.Session) error
+	GetUserByID(id int) (models.User, error)
 }
 
 func NewAuthRepo(db *sql.DB) *AuthRepo {
@@ -89,4 +90,14 @@ func (auth *AuthRepo) CreateSession(session models.Session) error {
 		return err
 	}
 	return nil
+}
+
+func (auth *AuthRepo) GetUserByID(id int) (models.User, error) {
+	var user models.User
+	query := `SELECT * FROM User WHERE ID = ?`
+
+	if err := auth.DB.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Username, &user.Password); err != nil {
+		return models.User{}, err
+	}
+	return user, nil
 }

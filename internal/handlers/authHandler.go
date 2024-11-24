@@ -29,7 +29,7 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		"Posts":    allPosts,
 		"Username": username,
 	}
-	tmpl, err := template.ParseFiles("/home/student/Desktop/forum/ui/html/pages/home.html")
+	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
 	if err != nil {
 		log.Fatal(err)
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
@@ -51,7 +51,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, http.StatusNotFound, nameFunction)
 		return
 	}
-	tmpl, err := template.ParseFiles("ui/html/pages/login.html")
+	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/login.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
@@ -109,7 +109,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, http.StatusNotFound, nameFunction)
 		return
 	}
-	tmpl, err := template.ParseFiles("/home/student/Desktop/forum/ui/html/pages/signup.html")
+	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/signup.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
