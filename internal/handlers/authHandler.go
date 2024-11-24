@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"html/template"
-	"log"
 	"net/http"
 	"time"
 
@@ -16,33 +15,37 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, http.StatusNotFound, nameFunction)
 		return
 	}
-
-	var username string
-
-	allPosts, err := h.service.GetPosts()
-	if err != nil {
-		log.Fatal(err)
-		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+	if r.Method == http.MethodGet {
+		var username string
+		session, err := r.Cookie("session")
+		if err == nil {
+			user, err := h.service.GetUserByToken(session.Value)
+			if err == nil {
+				username = user.Username
+			}
+		}
+		allPosts, err := h.service.GetPosts()
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		result := map[string]interface{}{
+			"Posts":    allPosts,
+			"Username": username,
+		}
+		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		if err = tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+	} else {
+		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
 		return
 	}
-	result := map[string]interface{}{
-		"Posts":    allPosts,
-		"Username": username,
-	}
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
-	if err != nil {
-		log.Fatal(err)
-		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
-		return
-	}
-	if err = tmpl.Execute(w, result); err != nil {
-		log.Fatal(err)
-		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
-		return
-	}
-
-	ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
-	return
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
