@@ -28,7 +28,7 @@ body {
 }
 
 .err a {
-    color: #a206f7; /* Neon cyan color */
+    color: #a206f7; 
     text-decoration: none;
     font-weight: bold;
 }

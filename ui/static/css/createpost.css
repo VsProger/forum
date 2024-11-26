@@ -94,6 +94,7 @@ button {
 button:hover {
     background-color: #a048df;
 }
+
 .error {
     color: red;
     font-weight: bold;
