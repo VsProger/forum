@@ -11,6 +11,14 @@
         body {
             font-family: 'Segoe UI', sans-serif;
             background-color: #f4f4f9;
+            background-image: url("/ui/static/img/cinema.jpg");
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center center;
+            /* color: #f4f4f9; */
+            /* text-shadow: 2px 2px 0 white; */
+            
         }
 
         header {
@@ -67,6 +75,17 @@
         .filterSubmit:hover {
             background-color: #008c9e;
         }
+
+        #filters {
+            background-color: lightgrey; /* Задний фон */
+            padding: 20px; /* Отступы внутри секции */
+            border: 1px solid #ccc; /* Граница (опционально) */
+            border-radius: 7px;
+        }
+
+        #reset {
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -83,7 +102,7 @@
                     <li class="nav-item"><a class="nav-link" href="/logout">Signout</a></li>
                     {{else}}
                     <li class="nav-item"><a class="nav-link" href="/">All Posts</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/login">Log in</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/login">Sign in</a></li>
                     <li class="nav-item"><a class="nav-link" href="/register">Sign up</a></li>
                     {{end}}
                 </ul>
@@ -120,6 +139,7 @@
                     </label>
                 </div>
                 <button class="filterSubmit btn" type="submit">Filter</button>
+                <a href="/" id="reset"><button class="filterSubmit btn" type="submit">Reset</button></a>
             </form>
         </section>
 

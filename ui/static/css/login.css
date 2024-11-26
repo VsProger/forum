@@ -1,5 +1,5 @@
 body {
-    background-image: url("https://i.ibb.co.com/jh1DvQ6/postback.jpg");
+    background-image: url("../img/cinema.jpg");
     background-attachment: fixed;
     background-repeat: no-repeat;
     background-size: cover;
@@ -9,36 +9,39 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: white; /* Добавляем белый цвет текста для всего контента */
 }
+
 a {
     color: white;
-    text-decoration: none; /* Убираем подчеркивание для всех ссылок */
+    text-decoration: none;
 }
-.header {
-    background-color: #00000092;
+
+header {
+    background-color:#00000092;
     color: #ffffff;
     text-align: center;
     padding: 20px;
-    display: flex; /* Используем flexbox */
-    justify-content: space-between; /* Равномерно распределяем элементы по ширине шапки */
-    align-items: center; /* Выравниваем элементы по центру по вертикали */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
-.header h1 {
+
+header h1 {
     margin: 0;
     font-size: 24px;
 }
-.header nav ul {
+
+header nav ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
 }
 
-
-.header nav ul li {
+header nav ul li {
     display: inline;
     margin-right: 20px;
 }
 
-.header nav ul li a {
+header nav ul li a {
     color: #ffffff;
     text-decoration: none;
     font-size: 16px;
@@ -47,7 +50,7 @@ a {
 .container {
     width: 100%;
     max-width: 400px;
-    margin: 50px auto;
+    margin: 30vh auto;
     padding: 20px;
     background-color: rgba(0, 0, 0, 0.5); /* Используем цвет контейнера с главной страницы с полупрозрачностью */
     border-radius: 10px;
