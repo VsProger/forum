@@ -1,12 +1,36 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/VsProger/snippetbox/logger"
 )
 
 var logg = logger.NewLogger()
+
+func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionCookie, err := r.Cookie("session")
+		if err != nil || sessionCookie.Value == "" {
+
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		user, err := h.service.GetUserByToken(sessionCookie.Value)
+		if err != nil {
+
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, "user", user)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
 
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

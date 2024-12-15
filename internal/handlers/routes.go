@@ -4,18 +4,17 @@ import "net/http"
 
 func (h *Handler) Router() http.Handler {
 	mux := http.NewServeMux()
+
 	mux.Handle("/ui/static/", http.StripPrefix("/ui/static/", http.FileServer(http.Dir("./ui/static"))))
+
+	mux.Handle("/myposts", h.AuthMiddleware(http.HandlerFunc(h.userPosts)))
+	mux.Handle("/filter", h.AuthMiddleware(http.HandlerFunc(h.filterByCategory)))
+	mux.Handle("/mylikedposts", h.AuthMiddleware(http.HandlerFunc(h.likePostsByUser)))
 
 	mux.HandleFunc("/", h.home)
 	mux.HandleFunc("/login", h.login)
 	mux.HandleFunc("/register", h.register)
 	mux.HandleFunc("/logout", h.logout)
-	mux.HandleFunc("/posts/", h.getPost)
-	mux.HandleFunc("/posts/create", h.createPost)
-	mux.HandleFunc("/myposts", h.userPosts)
-	mux.HandleFunc("/filter", h.filterByCategory)
-	mux.HandleFunc("/mylikedposts", h.likePostsByUser)
-	mux.HandleFunc("/posts/reactions", h.addReaction)
 
 	return h.AllHandler(mux)
 }
