@@ -33,7 +33,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.Method == http.MethodPost {
 		// Parse the form
-		if err := r.ParseMultipartForm(10 * 1024 * 1024); err != nil { // Limit 10MB
+		if err := r.ParseMultipartForm(20 * 1024 * 1024); err != nil { // Limit 20MB
 			h.handleError(w, nameFunction, http.StatusBadRequest, fmt.Errorf("unable to parse form: %v", err))
 			return
 		}
@@ -64,6 +64,17 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if file != nil {
+			// Check if the file size exceeds 20 MB
+			fileSize := r.ContentLength
+			if fileSize > 20*1024*1024 { // 20 MB limit
+				tmpl.Execute(w, struct {
+					ErrorText string
+				}{
+					ErrorText: "The file is too large. Please upload an image smaller than 20 MB.",
+				})
+				return
+			}
+
 			// Read the first 512 bytes of the file to check the MIME type
 			buf := make([]byte, 512)
 			if _, err := io.ReadFull(file, buf); err != nil {
