@@ -66,7 +66,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		if file != nil {
 			// Check if the file size exceeds 20 MB
 			fileSize := r.ContentLength
-			if fileSize > 10*1024 { // 20 MB limit
+			if fileSize > 20*1024*1024 { // 20 MB limit
 				tmpl.Execute(w, struct {
 					ErrorText string
 				}{
