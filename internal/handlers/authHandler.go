@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"html/template"
+	"log"
 	"net/http"
 	"time"
 
@@ -82,6 +83,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 		realUser, err := h.service.Auth.GetUserByEmail(user.Email)
 		if err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -130,17 +132,20 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
 		}
-		checkUser, _ := h.service.GetUserByEmail(user.Email)
+		checkUser, err := h.service.GetUserByEmail(user.Email)
 		if checkUser.Email == user.Email {
+			log.Fatal(err)
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email already used"), http.StatusBadRequest)
 			return
 		}
-		checkUser, _ = h.service.GetUserByUsername(user.Username)
+		checkUser, err = h.service.GetUserByUsername(user.Username)
 		if checkUser.Username == user.Username {
+			log.Fatal(err)
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Username already used"), http.StatusBadRequest)
 			return
 		}
 		if err := h.service.CheckUser(user); err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

@@ -9,6 +9,7 @@ type Post struct {
 	AuthorID     int
 	Title        string
 	Text         string
+	ImageURL     string
 	LikeCount    int
 	DislikeCount int
 	Username     string

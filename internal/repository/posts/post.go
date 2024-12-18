@@ -40,9 +40,9 @@ func (r *PostRepo) CreatePost(post models.Post) error {
 	defer tx.Rollback()
 
 	query := `
-	INSERT INTO Posts (AuthorID, Title, Text, CreationTime)
-	VALUES (?, ?, ?, datetime('now','+6 hours'));`
-	res, err := tx.Exec(query, post.AuthorID, post.Title, post.Text)
+	INSERT INTO Posts (AuthorID, Title, Text, ImageURL, CreationTime)
+	VALUES (?, ?, ?, ?, datetime('now','+6 hours'));`
+	res, err := tx.Exec(query, post.AuthorID, post.Title, post.Text, post.ImageURL)
 	if err != nil {
 		log.Printf("error inserting post: %v", err)
 		return fmt.Errorf("error inserting post: %w", err)
@@ -69,7 +69,7 @@ func (r *PostRepo) CreatePost(post models.Post) error {
 }
 
 func (r *PostRepo) GetPosts() ([]models.Post, error) {
-	query := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.CreationTime, u.Username 
+	query := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.CreationTime, p.ImageURL, u.Username 
 	FROM Posts p
 	JOIN User u ON p.AuthorID =u.ID`
 	queryCategories := `SELECT ID, Name FROM Category WHERE ID IN (SELECT CategoryID FROM PostCategory WHERE PostID = ?)`
@@ -82,7 +82,7 @@ func (r *PostRepo) GetPosts() ([]models.Post, error) {
 
 	for rows.Next() {
 		post := models.Post{}
-		if err := rows.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.CreationTime, &post.Username); err != nil {
+		if err := rows.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.CreationTime, &post.ImageURL, &post.Username); err != nil {
 			return posts, err
 		}
 		rows2, err := r.DB.Query(queryCategories, post.ID)
@@ -111,7 +111,7 @@ func (r *PostRepo) GetPosts() ([]models.Post, error) {
 }
 
 func (m *PostRepo) Latest() ([]models.Post, error) {
-	stmt := `SELECT ID, AuthorID, Title, Text, LikeCount, DislikeCount, CreationTime FROM Posts
+	stmt := `SELECT ID, AuthorID, Title, Text, LikeCount, DislikeCount, ImageURL, CreationTime FROM Posts
     ORDER BY CreationTime DESC LIMIT 10`
 
 	rows, err := m.DB.Query(stmt)
@@ -124,7 +124,7 @@ func (m *PostRepo) Latest() ([]models.Post, error) {
 	for rows.Next() {
 		var p models.Post
 
-		err = rows.Scan(&p.ID, &p.AuthorID, &p.Title, &p.Text, &p.LikeCount, &p.DislikeCount, &p.CreationTime)
+		err = rows.Scan(&p.ID, &p.AuthorID, &p.Title, &p.Text, &p.LikeCount, &p.DislikeCount, &p.ImageURL, &p.CreationTime)
 		if err != nil {
 			return nil, err
 		}
@@ -176,14 +176,14 @@ func (r *PostRepo) CreateCategory(name string) error {
 }
 
 func (r *PostRepo) GetPostByID(id int) (*models.Post, error) {
-	queryPost := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.LikeCount, p.DislikeCount, p.CreationTime, u.Username 
+	queryPost := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.LikeCount, p.DislikeCount, p.ImageURL, p.CreationTime, u.Username 
 	FROM Posts p
 	JOIN User u ON p.AuthorID = u.ID
 	WHERE p.ID = ?;`
 	queryCategories := `SELECT ID, Name FROM Category WHERE ID IN (SELECT CategoryID FROM PostCategory WHERE PostID = ?)`
 
 	post := &models.Post{}
-	err := r.DB.QueryRow(queryPost, id).Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.LikeCount, &post.DislikeCount, &post.CreationTime, &post.Username)
+	err := r.DB.QueryRow(queryPost, id).Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.LikeCount, &post.DislikeCount, &post.ImageURL, &post.CreationTime, &post.Username)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("post not found with ID %d", id)
@@ -258,7 +258,7 @@ func (p *PostRepo) CreateComment(comment models.Comment) error {
 }
 
 func (r *PostRepo) GetAllPostsByUserId(id int) ([]models.Post, error) {
-	queryPost := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.LikeCount, p.DislikeCount, p.CreationTime, u.Username 
+	queryPost := `SELECT p.ID, p.AuthorID, p.Title, p.Text, p.LikeCount, p.DislikeCount, p.ImageURL, p.CreationTime, u.Username 
 	FROM Posts p
 	JOIN User u ON p.AuthorID = u.ID
 	WHERE p.AuthorID = ? ORDER BY CreationTime DESC;`
@@ -273,7 +273,7 @@ func (r *PostRepo) GetAllPostsByUserId(id int) ([]models.Post, error) {
 	var posts []models.Post
 	for rows.Next() {
 		var post models.Post
-		err := rows.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.LikeCount, &post.DislikeCount, &post.CreationTime, &post.Username)
+		err := rows.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.LikeCount, &post.DislikeCount, &post.ImageURL, &post.CreationTime, &post.Username)
 		if err != nil {
 
 			if errors.Is(err, sql.ErrNoRows) {
