@@ -154,7 +154,7 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		HttpOnly: true,
 		Path:     "/",
 	})
-
+	// a
 	// Вход прошел успешно, перенаправляем пользователя на главную страницу
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
