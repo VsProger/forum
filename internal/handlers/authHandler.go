@@ -1,13 +1,18 @@
 package handlers
 
 import (
+	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/VsProger/snippetbox/internal/models"
+	"github.com/VsProger/snippetbox/pkg/oauth"
+	"golang.org/x/oauth2"
 )
 
 func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +52,148 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
 		return
 	}
+}
+
+func (h *Handler) GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
+	// Получаем конфигурацию OAuth
+	config := oauth.GetGoogleOAuth2Config()
+
+	// Генерация URL для авторизации
+	url := config.AuthCodeURL(oauth.GetGoogleOAuth2State(), oauth2.AccessTypeOffline)
+
+	// Перенаправление пользователя на страницу авторизации Google
+	http.Redirect(w, r, url, http.StatusSeeOther)
+}
+
+func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	// Получение код авторизации из параметров URL
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		http.Error(w, "Code not found", http.StatusBadRequest)
+		return
+	}
+
+	// Получаем конфигурацию OAuth
+	config := oauth.GetGoogleOAuth2Config()
+
+	// Обмен кода на токен
+	token, err := config.Exchange(r.Context(), code)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unable to exchange the token: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Используем токен для получения информации о пользователе
+	client := config.Client(r.Context(), token)
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v1/userinfo?alt=json")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unable to get user info: %s", err), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	var userInfo struct {
+		ID       string `json:"id"`
+		Email    string `json:"email"`
+		Name     string `json:"name"`
+		GoogleID string `json:"google_id"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		http.Error(w, fmt.Sprintf("Unable to parse user info: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Проверяем, существует ли пользователь с этим email в базе
+	user, err := h.service.Auth.GetUserByEmail(userInfo.Email)
+	if err != nil && err != sql.ErrNoRows {
+		http.Error(w, fmt.Sprintf("Error fetching user from database: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	if user.ID == 0 {
+		// Если пользователь не существует, создаем нового
+		newUser := models.User{
+			Username: userInfo.Name,
+			Email:    userInfo.Email,
+			GoogleID: userInfo.GoogleID,
+		}
+		fmt.Print(newUser)
+		err := h.service.Auth.CreateUserGoogle(newUser)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unable to create user: %s", err), http.StatusInternalServerError)
+			return
+		}
+		user = newUser
+	} else {
+		// Если пользователь существует, обновляем его данные, если необходимо
+		if user.GoogleID == "" {
+			user.GoogleID = userInfo.GoogleID
+			err := h.service.Auth.UpdateUserWithGoogleData(userInfo.ID)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Unable to update user with Google data: %s", err), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	fmt.Print(user)
+	// Создаем сессию для пользователя
+	sessionToken, err := h.service.Auth.SetSession(&user)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unable to create session: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Print(sessionToken)
+	// Сохраняем сессионный токен в cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    sessionToken,
+		Expires:  time.Now().Add(3 * time.Hour), // Время жизни сессии
+		HttpOnly: true,
+		Path:     "/",
+	})
+
+	// Вход прошел успешно, перенаправляем пользователя на главную страницу
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (h *Handler) githubLogin(w http.ResponseWriter, r *http.Request) {
+	url := oauth.GitHubAuthURL()
+	http.Redirect(w, r, url, http.StatusFound)
+}
+
+func (h *Handler) githubCallback(w http.ResponseWriter, r *http.Request) {
+	token, err := oauth.GitHubCallback(r)
+	if err != nil {
+		log.Println("Error during GitHub callback:", err)
+		http.Error(w, "Failed to authenticate with GitHub", http.StatusInternalServerError)
+		return
+	}
+
+	// Create a user or find an existing one using the OAuth token
+	user, err := h.service.Auth.CreateUserFromOAuth(token)
+	if err != nil {
+		http.Error(w, "Failed to create or find user", http.StatusInternalServerError)
+		return
+	}
+
+	// Set session cookie
+	sessionToken, err := h.service.Auth.SetSession(&user)
+	if err != nil {
+		http.Error(w, "Failed to set session", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    sessionToken,
+		HttpOnly: true,
+		Expires:  time.Now().Add(3 * time.Hour),
+	})
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {

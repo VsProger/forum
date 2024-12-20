@@ -15,6 +15,26 @@
             margin-top: 5px;
             display: block;
         }
+        .oauth-container {
+            margin-top: 20px;
+        }
+        .oauth-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+            font-size: 14px;
+        }
+        .oauth-btn:hover {
+            background-color: #e6e6e6;
+        }
     </style>
 </head>
 <body>
@@ -29,22 +49,29 @@
     </header>
     <div class="container">
         <form class="form-signup" action="/register" method="post" name="form">
-            
             <label for="username">Username</label>
             <input class="form-styling" type="text" name="username" placeholder=""/>
-            <span class="username-hint hint"></span> <!-- Подсказка для имени пользователя -->
+            <span class="username-hint hint"></span>
+
             <label for="email">Email</label>
             <input class="form-styling" type="text" name="email" placeholder=""/>
-            <span class="email-hint hint"></span> <!-- Подсказка для email -->
+            <span class="email-hint hint"></span>
+
             <label for="password">Password</label>
             <input class="form-styling" type="password" name="password" placeholder=""/>
-            <span class="password-hint hint"></span> <!-- Подсказка для пароля --> 
+            <span class="password-hint hint"></span>
+
             <div class="error">{{ .ErrorText }}</div>
             <div class="btn-animate">
                 <button class="btn-signup">Sign Up</button>
             </div>
-           
         </form>
+
+        <div class="oauth-container">
+            <p>Or sign up using:</p>
+            <a href="/auth/google" class="oauth-btn">Sign Up with Google</a>
+            <a href="/auth/github" class="oauth-btn">Sign Up with GitHub</a>
+        </div>
     </div>
     <script src="/ui/static/js/signup.js"></script>
 </body>

@@ -8,11 +8,14 @@ func (h *Handler) Router() http.Handler {
 	mux.Handle("/ui/static/", http.StripPrefix("/ui/static/", http.FileServer(http.Dir("./ui/static"))))
 
 	mux.Handle("/myposts", h.AuthMiddleware(http.HandlerFunc(h.userPosts)))
-	mux.Handle("/filter", h.AuthMiddleware(http.HandlerFunc(h.filterByCategory)))
+	mux.Handle("/filter", http.HandlerFunc(h.filterByCategory))
 	mux.Handle("/mylikedposts", h.AuthMiddleware(http.HandlerFunc(h.likePostsByUser)))
 	mux.HandleFunc("/posts/reactions", h.addReaction)
 	mux.HandleFunc("/posts/", h.getPost)
 	mux.HandleFunc("/posts/create", h.createPost)
+
+	mux.HandleFunc("/auth/google", h.GoogleLoginHandler)
+	mux.HandleFunc("/auth/google/callback", h.GoogleCallbackHandler)
 
 	mux.HandleFunc("/", h.home)
 	mux.HandleFunc("/login", h.login)

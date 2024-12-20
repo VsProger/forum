@@ -41,6 +41,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		// Get session and user
 		session, err := r.Cookie("session")
 		if err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
