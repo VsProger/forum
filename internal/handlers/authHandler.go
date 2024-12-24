@@ -137,7 +137,6 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	fmt.Print(user)
 	// Создаем сессию для пользователя
 	sessionToken, err := h.service.Auth.SetSession(&user)
 	if err != nil {
@@ -164,35 +163,89 @@ func (h *Handler) githubLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func (h *Handler) githubCallback(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GitHubLoginHandler(w http.ResponseWriter, r *http.Request) {
+	// Генерация URL для авторизации GitHub
+	url := oauth.GitHubAuthURL()
+	http.Redirect(w, r, url, http.StatusFound)
+}
+
+func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	// Получение токена через колбэк
 	token, err := oauth.GitHubCallback(r)
 	if err != nil {
-		log.Println("Error during GitHub callback:", err)
+		log.Printf("GitHub Callback Error: %v", err)
 		http.Error(w, "Failed to authenticate with GitHub", http.StatusInternalServerError)
 		return
 	}
 
-	// Create a user or find an existing one using the OAuth token
-	user, err := h.service.Auth.CreateUserFromOAuth(token)
+	// Получение данных пользователя из GitHub API
+	userInfo, err := oauth.GetGitHubUserInfo(token.AccessToken)
 	if err != nil {
-		http.Error(w, "Failed to create or find user", http.StatusInternalServerError)
+
+		log.Printf("GitHub User Info Error: %v", err)
+		http.Error(w, "Failed to get user info from GitHub", http.StatusInternalServerError)
 		return
 	}
 
-	// Set session cookie
+	fmt.Print(userInfo.Email)
+
+	// Проверка существующего пользователя или создание нового
+	user, err := h.service.Auth.GetUserByEmail(userInfo.Email)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("Database Error: %v", err)
+		http.Error(w, "Failed to fetch user from database", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("Eto nash ID %d", user.ID)
+
+	if user.ID == 0 {
+		// Создание нового пользователя
+		newUser := models.User{
+			Username: userInfo.Username,
+			Email:    userInfo.Email,
+			GitHubID: userInfo.GitHubID,
+		}
+		if err := h.service.Auth.CreateUserGitHub(newUser); err != nil {
+			log.Printf("User Creation Error: %v", err)
+			http.Error(w, "Failed to create user", http.StatusInternalServerError)
+			return
+		}
+		user = newUser
+
+	} else if user.GitHubID == 0 {
+		// Update the existing user with GitHub data
+		user.GitHubID = userInfo.GitHubID
+		user.Username = userInfo.Username
+		user.Email = userInfo.Email
+
+		fmt.Print(token.AccessToken)
+
+		if err := h.service.Auth.UpdateUserWithGitHubData(token.AccessToken); err != nil {
+			log.Printf("User Update Error: %v", err)
+			http.Error(w, "Failed to update user", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Создание сессии
 	sessionToken, err := h.service.Auth.SetSession(&user)
 	if err != nil {
-		http.Error(w, "Failed to set session", http.StatusInternalServerError)
+		log.Printf("Session Error: %v", err)
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
 
+	// Установка cookie с токеном
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    sessionToken,
 		HttpOnly: true,
 		Expires:  time.Now().Add(3 * time.Hour),
+		Path:     "/",
 	})
 
+	// Перенаправление на главную страницу
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 

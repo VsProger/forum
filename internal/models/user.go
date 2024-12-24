@@ -6,5 +6,6 @@ type User struct {
 	Username   string `json:"username"`
 	Password   string `json:"password,omitempty"`
 	GoogleID   string `json:"google_id,omitempty"`
+	GitHubID   int64  `json:"github_id,omitempty"`
 	OAuthToken string `json:"oauth_token,omitempty"`
 }

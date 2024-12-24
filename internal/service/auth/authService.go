@@ -26,6 +26,8 @@ type Auth interface {
 	GetUserByGoogleID(token string) (models.User, error)
 	UpdateUserWithGoogleData(token string) error
 	CreateUserGoogle(user models.User) error
+	CreateUserGitHub(user models.User) error
+	UpdateUserWithGitHubData(token string) error
 }
 
 var googleOauth2Config = oauth2.Config{
@@ -37,8 +39,8 @@ var googleOauth2Config = oauth2.Config{
 }
 
 var githubOauth2Config = oauth2.Config{
-	ClientID:     "your-github-client-id",                      // Replace with your GitHub Client ID
-	ClientSecret: "your-github-client-secret",                  // Replace with your GitHub Client Secret
+	ClientID:     "Ov23liop6ipn43yQRXfw",                       // Replace with your GitHub Client ID
+	ClientSecret: "52faf14f32e6efe5b76741d5bd91c485e848c392",   // Replace with your GitHub Client Secret
 	RedirectURL:  "http://localhost:8081/auth/github/callback", // Adjust based on your environment
 	Scopes:       []string{"read:user", "user:email"},
 	Endpoint:     github.Endpoint,
@@ -68,6 +70,14 @@ func (a *AuthService) CreateUserGoogle(user models.User) error {
 		return err
 	}
 	return a.repo.CreateGoogleUser(user)
+}
+
+func (a *AuthService) CreateUserGitHub(user models.User) error {
+	var err error
+	if err != nil {
+		return err
+	}
+	return a.repo.CreateGithubUser(user)
 }
 
 func (a *AuthService) GetUserByToken(token string) (models.User, error) {
@@ -258,4 +268,22 @@ func (a *AuthService) CreateUserFromOAuth(token *oauth2.Token) (models.User, err
 	}
 
 	return userFromRepo, nil
+}
+
+func (a *AuthService) UpdateUserWithGitHubData(token string) error {
+	// Get the user by the token (likely the GitHub ID)
+	user, err := a.repo.GetUserFromGitHubToken(token) // Assuming this method retrieves the user based on the GitHub token
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	// Update user with the new GitHub data
+	err = a.repo.UpdateUserWithGitHubData(user)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
 }

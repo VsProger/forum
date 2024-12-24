@@ -17,6 +17,9 @@ func (h *Handler) Router() http.Handler {
 	mux.HandleFunc("/auth/google", h.GoogleLoginHandler)
 	mux.HandleFunc("/auth/google/callback", h.GoogleCallbackHandler)
 
+	mux.HandleFunc("/auth/github", h.githubLogin)
+	mux.HandleFunc("/auth/github/callback", h.GitHubCallbackHandler)
+
 	mux.HandleFunc("/", h.home)
 	mux.HandleFunc("/login", h.login)
 	mux.HandleFunc("/register", h.register)
