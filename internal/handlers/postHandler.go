@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -167,13 +168,20 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var username string
+
 		session, err := r.Cookie("session")
 		if err == nil {
 			user, err := h.service.GetUserByToken(session.Value)
 			if err == nil {
 				username = user.Username
+
+				if err != nil {
+					ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+					return
+				}
 			}
 		}
+
 		result := map[string]interface{}{
 			"Post":          post,
 			"Authenticated": username,
@@ -390,4 +398,23 @@ func (h *Handler) uploadImage(file multipart.File) (string, error) {
 	}
 
 	return filePath, nil
+}
+
+func (h *Handler) GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
+	// Извлекаем user_id из сессии или из запроса
+	userID := 1 // Здесь используется статический user_id для примера
+
+	// Получаем уведомления из базы данных
+	notifications, err := h.service.GetNotificationsByUserID(userID)
+	if err != nil {
+		log.Fatal(err)
+		http.Error(w, "Error fetching notifications", http.StatusInternalServerError)
+		return
+	}
+
+	// Отправляем уведомления как JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"notifications": notifications,
+	})
 }

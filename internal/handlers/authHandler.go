@@ -190,7 +190,7 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	fmt.Print(userInfo.Email)
 
 	// Проверка существующего пользователя или создание нового
-	user, err := h.service.Auth.GetUserByEmail(userInfo.Email)
+	user, err := h.service.Auth.GetUserByEmailGithub(userInfo.Email)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("Database Error: %v", err)
 		http.Error(w, "Failed to fetch user from database", http.StatusInternalServerError)
@@ -338,14 +338,14 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email already used"), http.StatusBadRequest)
 			return
 		}
-		checkUser, err = h.service.GetUserByUsername(user.Username)
-		if checkUser.Username == user.Username {
-			log.Fatal(err)
-			ErrorHandlerWithTemplate(tmpl, w, errors.New("Username already used"), http.StatusBadRequest)
-			return
-		}
+		// checkUser, err = h.service.GetUserByUsername(user.Username)
+		// if checkUser.Username == user.Username {
+		// 	log.Fatal(err, "adsadalol")
+		// 	ErrorHandlerWithTemplate(tmpl, w, errors.New("Username already used"), http.StatusBadRequest)
+		// 	return
+		// }
 		if err := h.service.CheckUser(user); err != nil {
-			log.Fatal(err)
+			log.Fatal(err, "Dasdaad")
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

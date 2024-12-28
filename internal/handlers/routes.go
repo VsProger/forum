@@ -15,6 +15,8 @@ func (h *Handler) Router() http.Handler {
 	mux.HandleFunc("/posts/create", h.createPost)
 
 	mux.HandleFunc("/auth/google", h.GoogleLoginHandler)
+	mux.HandleFunc("/notifications", h.GetNotificationsHandler)
+
 	mux.HandleFunc("/auth/google/callback", h.GoogleCallbackHandler)
 
 	mux.HandleFunc("/auth/github", h.githubLogin)

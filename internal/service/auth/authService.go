@@ -17,6 +17,8 @@ type Auth interface {
 	CreateUser(user models.User) error
 	GetUserByToken(token string) (models.User, error)
 	GetUserByEmail(email string) (models.User, error)
+	GetUserByEmailGithub(email string) (models.User, error)
+
 	CheckUser(user *models.User) error
 	GetUserByUsername(username string) (models.User, error)
 	CheckPassword(user models.User) error
@@ -114,6 +116,14 @@ func (a *AuthService) UpdateUserWithGoogleData(token string) error {
 
 func (a *AuthService) GetUserByEmail(email string) (models.User, error) {
 	user, err := a.repo.GetUserByEmail(email)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (a *AuthService) GetUserByEmailGithub(email string) (models.User, error) {
+	user, err := a.repo.GetUserByEmailGithub(email)
 	if err != nil {
 		return user, err
 	}

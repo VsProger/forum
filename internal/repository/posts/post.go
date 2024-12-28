@@ -19,6 +19,10 @@ type Posts interface {
 	GetAllPostsByUserId(id int) ([]models.Post, error)
 	AddReactionToPost(reaction models.Reaction) error
 	AddReactionToComment(reaction models.Reaction) error
+	CreateNotification(notification models.Notification) error
+	GetNotificationsForUser(userID int) ([]models.Notification, error)
+	MarkNotificationAsRead(notificationID int) error
+	NotifyUser(userID int, message string) error
 }
 
 type PostRepo struct {
@@ -380,4 +384,59 @@ func (p *PostRepo) AddReactionToComment(reaction models.Reaction) error {
 			return err
 		}
 	}
+}
+
+func (r *PostRepo) CreateNotification(notification models.Notification) error {
+	query := `
+		INSERT INTO Notifications (UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead)
+		VALUES (?, ?, ?, ?, ?, ?, false)
+	`
+	_, err := r.DB.Exec(query, notification.UserID, notification.PostID, notification.CommentID, notification.Type, notification.Message, notification.CreatedAt)
+	if err != nil {
+		return fmt.Errorf("error creating notification: %w", err)
+	}
+	return nil
+}
+
+func (r *PostRepo) GetNotificationsForUser(userID int) ([]models.Notification, error) {
+	query := `
+    SELECT ID, UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead
+    FROM Notifications
+    WHERE UserID = ? ORDER BY CreatedAt DESC
+    `
+	rows, err := r.DB.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching notifications: %w", err)
+	}
+	defer rows.Close()
+
+	var notifications []models.Notification
+	for rows.Next() {
+		var notification models.Notification
+		if err := rows.Scan(&notification.ID, &notification.UserID, &notification.PostID, &notification.CommentID, &notification.Type, &notification.Message, &notification.CreatedAt, &notification.IsRead); err != nil {
+			return nil, fmt.Errorf("error scanning notification: %w", err)
+		}
+		notifications = append(notifications, notification)
+	}
+
+	// Return notifications and nil for error (no error occurred)
+	return notifications, nil
+}
+
+func (r *PostRepo) MarkNotificationAsRead(notificationID int) error {
+	query := `
+    UPDATE Notifications
+    SET IsRead = true
+    WHERE ID = ?
+    `
+	_, err := r.DB.Exec(query, notificationID)
+	if err != nil {
+		return fmt.Errorf("error marking notification as read: %w", err)
+	}
+	return nil
+}
+
+func (r *PostRepo) NotifyUser(userID int, message string) error {
+	log.Printf("Notification sent to user %d: %s", userID, message)
+	return nil
 }

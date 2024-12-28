@@ -32,6 +32,7 @@ type Authorization interface {
 	CreateGithubUser(user models.User) error
 	GetUserFromGitHubToken(token string) (models.User, error)
 	UpdateUserWithGitHubData(user models.User) error
+	GetUserByEmailGithub(email string) (models.User, error)
 }
 
 func NewAuthRepo(db *sql.DB) *AuthRepo {
@@ -81,10 +82,24 @@ func (auth *AuthRepo) GetUserByToken(token string) (models.User, error) {
 }
 
 func (r *AuthRepo) GetUserByEmail(email string) (models.User, error) {
+	query := `SELECT ID, Username, Email, Password FROM User WHERE Email = ?`
+
+	row := r.DB.QueryRow(query, email)
+	user := models.User{}
+
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (r *AuthRepo) GetUserByEmailGithub(email string) (models.User, error) {
 	query := `SELECT ID, Username, Email, Password, GitHubID FROM User WHERE Email = ?`
 
 	row := r.DB.QueryRow(query, email)
 	user := models.User{}
+
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GitHubID)
 	if err != nil {
 		return user, err

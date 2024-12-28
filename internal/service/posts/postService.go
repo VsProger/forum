@@ -3,6 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/VsProger/snippetbox/internal/models"
 	"github.com/VsProger/snippetbox/internal/repository/posts"
@@ -17,6 +19,7 @@ type PostService interface {
 	CreateComment(comment models.Comment) error
 	GetPostsByUserId(user_id int) ([]models.Post, error)
 	AddReaction(reaction models.Reaction) error
+	GetNotificationsByUserID(user_id int) ([]models.Notification, error)
 }
 
 type postService struct {
@@ -81,10 +84,47 @@ func (s *postService) CreateCategory(name string) error {
 }
 
 func (s *postService) CreateComment(comment models.Comment) error {
+	// Валидация комментария
 	if err := pkg.ValidateComment(comment); err != nil {
 		return err
 	}
-	return s.postRepo.CreateComment(comment)
+
+	// Создание комментария
+	if err := s.postRepo.CreateComment(comment); err != nil {
+		return fmt.Errorf("failed to create comment: %w", err)
+	}
+
+	// Получение поста для отправки уведомления
+	post, err := s.postRepo.GetPostByID(comment.PostID)
+	if err != nil {
+		return fmt.Errorf("comment created, but failed to retrieve post for notification: %w", err)
+	}
+
+	// Формирование уведомления
+	notification := models.Notification{
+		UserID:    post.AuthorID,
+		PostID:    comment.PostID,
+		CommentID: comment.ID,
+		Type:      "new_comment",
+		Message:   fmt.Sprintf("Your post '%s' received a new comment: %s", post.Title, comment.Text),
+		CreatedAt: time.Now(),
+		IsRead:    false,
+	}
+
+	// Сохранение уведомления в БД
+	if err := s.postRepo.CreateNotification(notification); err != nil {
+		return fmt.Errorf("comment created, but failed to save notification: %w", err)
+	}
+
+	// Асинхронная отправка уведомления
+	go func() {
+		if err := s.postRepo.NotifyUser(post.AuthorID, notification.Message); err != nil {
+			// Логирование ошибки
+			log.Printf("failed to send notification: %v", err)
+		}
+	}()
+
+	return nil
 }
 
 func (s *postService) GetPostsByUserId(user_id int) ([]models.Post, error) {
@@ -96,18 +136,49 @@ func (s *postService) GetPostsByUserId(user_id int) ([]models.Post, error) {
 }
 
 func (s *postService) AddReaction(reaction models.Reaction) error {
-	switch {
-	case reaction.PostID != 0 && reaction.CommentID == 0:
-		if err := s.postRepo.AddReactionToPost(reaction); err != nil {
-			return fmt.Errorf("Error adding or updating reaction: %v", err)
-		}
-	case reaction.CommentID != 0 && reaction.PostID != 0:
-		if err := s.postRepo.AddReactionToComment(reaction); err != nil {
-			fmt.Println("HEREE")
-			return err
-		}
-	default:
-		return fmt.Errorf("specify either PostId or CommentId, not both")
+	if err := s.postRepo.AddReactionToPost(reaction); err != nil {
+		return fmt.Errorf("error adding or updating reaction: %w", err)
 	}
+
+	// Получение поста для уведомления
+	post, err := s.postRepo.GetPostByID(reaction.PostID)
+	if err != nil {
+		return fmt.Errorf("reaction added, but failed to retrieve post for notification: %w", err)
+	}
+
+	// Формирование уведомления
+	action := "liked"
+	if reaction.Vote == -1 {
+		action = "disliked"
+	}
+	message := fmt.Sprintf("Your post '%s' was %s by a user.", post.Title, action)
+
+	notification := models.Notification{
+		UserID:    post.AuthorID,
+		PostID:    reaction.PostID,
+		CommentID: reaction.ID,
+		Type:      "new_comment",
+		Message:   message,
+		CreatedAt: time.Now(),
+		IsRead:    false,
+	}
+
+	// Асинхронная отправка уведомления
+	go func() {
+		if err := s.postRepo.CreateNotification(notification); err != nil {
+			log.Printf("failed to send notification: %v", err)
+		}
+	}()
+
 	return nil
+}
+
+func (s *postService) GetNotificationsByUserID(user_id int) ([]models.Notification, error) {
+	notifications, err := s.postRepo.GetNotificationsForUser(user_id)
+	if err != nil {
+		log.Fatal(err)
+		return nil, fmt.Errorf("failed to retrieve notifications: %w", err)
+	}
+
+	return notifications, nil
 }
