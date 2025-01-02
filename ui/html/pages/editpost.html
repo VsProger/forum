@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/ui/static/css/createpost.css">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+    <title>Create Post - Cinema Forum</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><a href="/">Cinema Forum</a></h1>
+
+        <nav>
+            <a href="/">Back to Posts</a>
+        </nav>
+    </header>
+
+    <main>
+        <section id="edit-post">
+            <h2>Create Post</h2>
+            <img src="/ui/static/uploads/" alt="Edit Post Banner" class="img-fluid" />
+
+            <form method="POST" action="/postsedit/{{.Post.ID}}" enctype="multipart/form-data">
+                <label for="title">Title:</label><br>
+                <input type="text" id="title" name="title"><br><br>
+
+                <label for="text">Text:</label><br>
+                <textarea id="text" name="text" rows="4" cols="50"></textarea><br><br>
+
+                <!-- Display the error message if it exists -->
+                {{if .ErrorText}}
+                    <div class="error">{{.ErrorText}}</div>
+                {{end}}
+
+                <h2>Genre:</h2>
+                <label><input type="radio" name="categories" value="Detective">Detective</label><br>
+                <label><input type="radio" name="categories" value="Horror">Horror</label><br>
+                <label><input type="radio" name="categories" value="Comedy">Comedy</label><br>
+                <label><input type="radio" name="categories" value="Other">Other</label><br><br>
+
+                <label for="image">Upload Image (JPEG, PNG, GIF):</label><br>
+                <input type="file" name="image" accept="image/jpeg, image/png, image/gif"><br><br>
+
+                <button type="submit">Edit Post</button>
+            </form>
+        </section>
+    </main>
+
+    <script src="/ui/static/js/script.js"></script>
+</body>
+</html>

@@ -15,6 +15,7 @@ type Filter interface {
 	FilterByCategories(categories []int) ([]models.Post, error)
 	FilterByLikes(userId int) ([]models.Post, error)
 	GetCategoryByName(strings []string) ([]int, error)
+	FilterByDislikes(userID int) ([]models.Post, error)
 }
 
 func NewFilterService(repository filter.Filter) *FilterService {
@@ -29,6 +30,10 @@ func (f *FilterService) FilterByCategories(categories []int) ([]models.Post, err
 
 func (f *FilterService) FilterByLikes(userID int) ([]models.Post, error) {
 	return f.repo.GetUsersByLikedPosts(userID)
+}
+
+func (f *FilterService) FilterByDislikes(userID int) ([]models.Post, error) {
+	return f.repo.GetUsersByDislikedPosts(userID)
 }
 
 func (f *FilterService) GetCategoryByName(strings []string) ([]int, error) {

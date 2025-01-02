@@ -23,6 +23,9 @@ type Posts interface {
 	GetNotificationsForUser(userID int) ([]models.Notification, error)
 	MarkNotificationAsRead(notificationID int) error
 	NotifyUser(userID int, message string) error
+	GetUserCommentsByUserID(userID int) ([]models.Post, error)
+	DeletePost(postID int) error
+	UpdatePost(post models.Post) error
 }
 
 type PostRepo struct {
@@ -423,6 +426,45 @@ func (r *PostRepo) GetNotificationsForUser(userID int) ([]models.Notification, e
 	return notifications, nil
 }
 
+func (r *PostRepo) GetUserCommentsByUserID(userID int) ([]models.Post, error) {
+	query := `
+	SELECT DISTINCT 
+    p.ID, 
+    p.AuthorID, 
+    p.Title, 
+    p.Text, 
+    p.LikeCount,
+	p.DislikeCount,
+	p.ImageURL,  
+    p.CreationTime
+FROM 
+    Posts p
+JOIN 
+    Comment c 
+ON 
+    p.ID = c.PostID
+WHERE 
+    c.AuthorID = $1`
+
+	rows, err := r.DB.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching notifications: %w", err)
+	}
+	defer rows.Close()
+
+	var posts []models.Post
+	for rows.Next() {
+		var post models.Post
+		if err := rows.Scan(&post.ID, &post.AuthorID, &post.Title, &post.Text, &post.LikeCount, &post.DislikeCount, &post.ImageURL, &post.CreationTime); err != nil {
+			return nil, fmt.Errorf("error scanning notification: %w", err)
+		}
+		posts = append(posts, post)
+	}
+
+	// Return notifications and nil for error (no error occurred)
+	return posts, nil
+}
+
 func (r *PostRepo) MarkNotificationAsRead(notificationID int) error {
 	query := `
     UPDATE Notifications
@@ -439,4 +481,89 @@ func (r *PostRepo) MarkNotificationAsRead(notificationID int) error {
 func (r *PostRepo) NotifyUser(userID int, message string) error {
 	log.Printf("Notification sent to user %d: %s", userID, message)
 	return nil
+}
+
+func (r *PostRepo) DeletePost(postID int) error {
+	// Start a transaction to ensure all related data is deleted correctly
+	tx, err := r.DB.Begin()
+	if err != nil {
+		log.Printf("error starting transaction: %v", err)
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Delete related reactions
+	_, err = tx.Exec("DELETE FROM Reaction WHERE PostID = ?", postID)
+	if err != nil {
+		log.Printf("error deleting reactions for post: %v", err)
+		return fmt.Errorf("error deleting reactions for post: %w", err)
+	}
+
+	// Delete related comments
+	_, err = tx.Exec("DELETE FROM Comment WHERE PostID = ?", postID)
+	if err != nil {
+		log.Printf("error deleting comments for post: %v", err)
+		return fmt.Errorf("error deleting comments for post: %w", err)
+	}
+
+	// Finally, delete the post
+	_, err = tx.Exec("DELETE FROM Posts WHERE ID = ?", postID)
+	if err != nil {
+		log.Printf("error deleting post: %v", err)
+		return fmt.Errorf("error deleting post: %w", err)
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("error committing transaction: %v", err)
+		return fmt.Errorf("error committing transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (r *PostRepo) UpdatePost(post models.Post) error {
+	// Prepare the dynamic query
+	query := "UPDATE Posts SET "
+	params := make([]interface{}, 0) // Create a slice of type []interface{}
+	paramIndex := 1
+
+	// Dynamically build parts of the SQL query
+	if post.Title != "" {
+		query += fmt.Sprintf("Title = $%d, ", paramIndex)
+		params = append(params, post.Title)
+		paramIndex++
+	}
+	if post.Text != "" {
+		query += fmt.Sprintf("Text = $%d, ", paramIndex)
+		params = append(params, post.Text)
+		paramIndex++
+	}
+	if post.ImageURL != "" {
+		query += fmt.Sprintf("ImageURL = $%d, ", paramIndex)
+		params = append(params, post.ImageURL)
+		paramIndex++
+	}
+
+	// Remove the trailing comma and space, then add WHERE clause
+	query = query[:len(query)-2] + fmt.Sprintf(" WHERE id = $%d", paramIndex)
+	params = append(params, post.ID)
+
+	// Manually pass each element of params
+	switch len(params) {
+	case 1:
+		_, err := r.DB.Exec(query, params[0])
+		return err
+	case 2:
+		_, err := r.DB.Exec(query, params[0], params[1])
+		return err
+	case 3:
+		_, err := r.DB.Exec(query, params[0], params[1], params[2])
+		return err
+	case 4:
+		_, err := r.DB.Exec(query, params[0], params[1], params[2], params[3])
+		return err
+	default:
+		return fmt.Errorf("unsupported number of parameters: %d", len(params))
+	}
 }

@@ -128,9 +128,14 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 			post.Categories = append(post.Categories, models.Category{Name: name})
 		}
 
-		// Validate post
 		if err := pkg.VallidatePost(post); err != nil {
-			ErrorHandlerWithTemplate(tmpl, w, err, http.StatusBadRequest)
+			result := map[string]interface{}{
+				"Post":      post,
+				"ErrorText": err.Error(),
+			}
+			if tmpl.Execute(w, result) != nil {
+				ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			}
 			return
 		}
 
@@ -276,6 +281,45 @@ func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		result := map[string]interface{}{
+			"Posts":       posts,
+			"CurrentUser": user,
+			"Username":    user.Username,
+		}
+		if err = tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, "userPosts")
+			return
+		}
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *Handler) userComments(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
+	if err != nil {
+		ErrorHandler(w, http.StatusInternalServerError, "getComments")
+		return
+	}
+	if r.Method == http.MethodGet {
+		nameFunction := "userComments"
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		posts, err := h.service.GetUserCommentsByUserID(user.ID)
+		if err != nil {
+			log.Fatal(err)
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		result := map[string]interface{}{
 			"Posts":    posts,
 			"Username": user.Username,
 		}
@@ -401,20 +445,256 @@ func (h *Handler) uploadImage(file multipart.File) (string, error) {
 }
 
 func (h *Handler) GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
-	// Извлекаем user_id из сессии или из запроса
-	userID := 1 // Здесь используется статический user_id для примера
+	nameFunction := "notifications"
 
-	// Получаем уведомления из базы данных
-	notifications, err := h.service.GetNotificationsByUserID(userID)
+	session, err := r.Cookie("session")
 	if err != nil {
-		log.Fatal(err)
-		http.Error(w, "Error fetching notifications", http.StatusInternalServerError)
+		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+
+		// Получаем уведомления из базы данных
+		notifications, err := h.service.GetNotificationsByUserID(user.ID)
+		if err != nil {
+			log.Fatal(err)
+			http.Error(w, "Error fetching notifications", http.StatusInternalServerError)
+			return
+		}
+
+		// Отправляем уведомления как JSON
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"notifications": notifications,
+		})
+	}
+}
+
+func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
+	nameFunction := "DeletePost"
+
+	fmt.Print(r.Method)
+
+	if r.Method == http.MethodPost {
+		idStr := r.URL.Path[len("/postsdelete/"):]
+
+		if idStr == "" {
+			log.Println("Error: ID is missing in the URL path")
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+
+		id, err := strconv.Atoi(idStr)
+		if err != nil || id <= 0 {
+			log.Printf("Error converting ID: %v", err)
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+
+		// Get session and user info
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusUnauthorized, nameFunction)
+			return
+		}
+
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusUnauthorized, nameFunction)
+			return
+		}
+
+		// Fetch the post by ID to verify if it exists
+		post, err := h.service.GetPostByID(id)
+		if err != nil {
+			ErrorHandler(w, http.StatusNotFound, nameFunction)
+			return
+		}
+
+		// Ensure the user is the author of the post
+		if post.AuthorID != user.ID {
+			ErrorHandler(w, http.StatusForbidden, nameFunction)
+			return
+		}
+
+		// Delete the post (this may include deleting related data like reactions or comments)
+		if err := h.service.PostService.DeletePost(id); err != nil {
+			log.Fatal(err)
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+
+		// Respond with a success message or appropriate redirection
+		w.WriteHeader(http.StatusNoContent) // 204 No Content for successful deletion
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
+	nameFunction := "editpost"
+	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/editpost.html")
+	if err != nil {
+
+		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
 	}
 
-	// Отправляем уведомления как JSON
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"notifications": notifications,
-	})
+	// Extract the post ID from the URL
+	postID := r.URL.Path[len("/postsedit/"):] // assuming the URL path is "/postsedit/{id}"
+	if postID == "" {
+		ErrorHandler(w, http.StatusBadRequest, nameFunction)
+		return
+	}
+
+	postIDInt, err := strconv.Atoi(postID)
+
+	if r.Method == http.MethodGet {
+		// Fetch the post from the database using the extracted postID
+		post, err := h.service.PostService.GetPostByID(postIDInt)
+		if err != nil {
+			ErrorHandler(w, http.StatusNotFound, nameFunction)
+			return
+		}
+
+		// Populate the template with the post data for editing
+		result := map[string]interface{}{
+			"Post": post,
+		}
+
+		if err := tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+
+	} else if r.Method == http.MethodPost {
+		// Parse the form
+		if err := r.ParseMultipartForm(20 * 1024 * 1024); err != nil { // Limit 20MB
+			h.handleError(w, nameFunction, http.StatusBadRequest, fmt.Errorf("unable to parse form: %v", err))
+			return
+		}
+
+		// Get session and user
+		session, err := r.Cookie("session")
+		if err != nil {
+			log.Fatal(err)
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusUnauthorized, nameFunction)
+			return
+		}
+
+		// Get the categories from the form
+		categories := r.Form["categories"]
+		post := models.Post{
+			Title: r.FormValue("title"),
+			Text:  r.FormValue("text"),
+		}
+
+		// Handle file upload
+		file, _, err := r.FormFile("image")
+		if err != nil && err.Error() != "http: no such file" { // If error is not related to missing file
+			h.handleError(w, nameFunction, http.StatusBadRequest, fmt.Errorf("file upload error: %v", err))
+			return
+		}
+
+		if file != nil {
+			// Check if the file size exceeds 20 MB
+			fileSize := r.ContentLength
+			if fileSize > 20*1024*1024 { // 20 MB limit
+				tmpl.Execute(w, struct {
+					ErrorText string
+				}{
+					ErrorText: "The file is too large. Please upload an image smaller than 20 MB.",
+				})
+				return
+			}
+
+			// Read the first 512 bytes of the file to check the MIME type
+			buf := make([]byte, 512)
+			if _, err := io.ReadFull(file, buf); err != nil {
+				h.handleError(w, nameFunction, http.StatusInternalServerError, fmt.Errorf("unable to read file: %v", err))
+				return
+			}
+
+			// Detect the MIME type
+			fileType := http.DetectContentType(buf)
+			fmt.Println("Detected file type:", fileType) // Debugging line
+
+			// Define allowed MIME types
+			allowedTypes := []string{"image/jpeg", "image/png", "image/gif"}
+			isValidType := false
+			for _, t := range allowedTypes {
+				if fileType == t {
+					isValidType = true
+					break
+				}
+			}
+
+			// If the file type is not valid, show the error
+			if !isValidType {
+				tmpl.Execute(w, struct {
+					ErrorText string
+				}{
+					ErrorText: "Unsupported file type. Please upload a JPG, PNG, or GIF image.",
+				})
+				return
+			}
+
+			// Reset the file pointer back to the beginning for further processing
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				h.handleError(w, nameFunction, http.StatusInternalServerError, fmt.Errorf("unable to reset file pointer: %v", err))
+				return
+			}
+
+			// Save the file if valid
+			imageURL, err := h.uploadImage(file)
+			if err != nil {
+				h.handleError(w, nameFunction, http.StatusInternalServerError, err)
+				return
+			}
+			post.ImageURL = imageURL
+		}
+
+		// Assign categories
+		for _, name := range categories {
+			post.Categories = append(post.Categories, models.Category{Name: name})
+		}
+
+		// Validate post
+		// if err := pkg.VallidatePost(post); err != nil {
+		// 	result := map[string]interface{}{
+		// 		"Post":      post,
+		// 		"ErrorText": err.Error(),
+		// 	}
+		// 	if tmpl.Execute(w, result) != nil {
+		// 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+		// 	}
+		// 	return
+		// }
+
+		post.AuthorID = user.ID
+		post.ID = postIDInt // Set the post ID from the URL
+
+		// Update the post in the database
+		if err := h.service.PostService.UpdatePost(post); err != nil {
+			log.Fatal(err)
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+
+		// Redirect to the updated post
+		http.Redirect(w, r, fmt.Sprintf("/posts/%s", strconv.Itoa(post.ID)), http.StatusSeeOther)
+
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }

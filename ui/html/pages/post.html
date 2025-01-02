@@ -17,15 +17,15 @@
     <main>
         <section id="post-details">
             <div class="post-info">
-                <p><strong>Username: {{.Post.Username}}</strong> </p>
+                <p><strong>Username: {{.Post.Username}}</strong></p>
                 <p><strong>{{.Post.Title}}</strong></p>
-                <p><strong>Text: {{.Post.Text}}</strong> </p>
+                <p><strong>Text: {{.Post.Text}}</strong></p>
                 <p><strong>Genre: {{range $i, $cat := .Post.Categories}}{{if $i}}, {{end}}{{ $cat.Name }}{{- end}}</strong></p>
-                <p><strong>Creation Time: {{.Post.CreationTime.Format "2006 Jan 02"}}</strong> </p>
+                <p><strong>Creation Time: {{.Post.CreationTime.Format "2006 Jan 02"}}</strong></p>
                 <p><strong>Likes: {{.Post.LikeCount}}</strong>
                     {{if .Authenticated}}
                         <form method="POST" action="/posts/reactions">
-                            <input type="hidden" name="postId" value={{.Post.ID}}>
+                            <input type="hidden" name="postId" value="{{.Post.ID}}">
                             <input type="hidden" name="status" value="1">
                             <button type="submit" class="like-button">Like</button>
                         </form>
@@ -34,63 +34,66 @@
                 <p><strong>Dislikes: {{.Post.DislikeCount}}</strong>
                     {{if .Authenticated}}
                         <form method="POST" action="/posts/reactions">
-                            <input type="hidden" name="postId" value={{.Post.ID}}>
+                            <input type="hidden" name="postId" value="{{.Post.ID}}">
                             <input type="hidden" name="status" value="-1">
                             <button type="submit" class="like-button">Dislike</button>
                         </form>
                     {{end}}
                 </p>
-                
-                
 
-            </div>
-           
-            <div class="comments"> 
-                {{if .Authenticated}}
-                <h2>Comments</h2>
-                {{range .Post.Comment}}
-                <div class="comment">
-                    <p><strong>{{.Username}}:</strong> {{.Text}}</p>
-                    <p><strong>Likes: {{.LikeCount}}</strong>
-                    <form method="POST" action="/posts/reactions">
-                        <input type="hidden" name="postId" value="{{.PostID}}">
-                        <input type="hidden" name="commentId" value="{{.ID}}">
-                        <input type="hidden" name="status" value="1">
-                        <button type="submit" class="like-button">Like</button>
+                <!-- Add a delete post form for the post owner -->
+                {{if eq .Post.Username $.CurrentUser.Username}}
+                    <form action="/postsdelete/{{.Post.ID}}" method="POST" class="mt-3">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete Post</button>
                     </form>
-                    </p>
-                    <p><strong>Dislikes: {{.DislikeCount}}</strong>
-                    <form method="POST" action="/posts/reactions">
-                        <input type="hidden" name="postId" value="{{.PostID}}">
-                        <input type="hidden" name="commentId" value="{{.ID}}">
-                        <input type="hidden" name="status" value="-1">
-                        <button type="submit" class="dislike-button">Dislike</button>
-                    </form>
-                    </p>
-                </div>
                 {{end}}
+            </div>
+
+            <div class="comments">
+                {{if .Authenticated}}
+                    <h2>Comments</h2>
+                    {{range .Post.Comment}}
+                    <div class="comment">
+                        <p><strong>{{.Username}}:</strong> {{.Text}}</p>
+                        <p><strong>Likes: {{.LikeCount}}</strong>
+                        <form method="POST" action="/posts/reactions">
+                            <input type="hidden" name="postId" value="{{.PostID}}">
+                            <input type="hidden" name="commentId" value="{{.ID}}">
+                            <input type="hidden" name="status" value="1">
+                            <button type="submit" class="like-button">Like</button>
+                        </form>
+                        </p>
+                        <p><strong>Dislikes: {{.DislikeCount}}</strong>
+                        <form method="POST" action="/posts/reactions">
+                            <input type="hidden" name="postId" value="{{.PostID}}">
+                            <input type="hidden" name="commentId" value="{{.ID}}">
+                            <input type="hidden" name="status" value="-1">
+                            <button type="submit" class="dislike-button">Dislike</button>
+                        </form>
+                        </p>
+                    </div>
+                    {{end}}
                 {{else}}
-                {{range .Post.Comment}}
-                <div class="comment">
-                    <p><strong>{{.Username}}:</strong> {{.Text}}</p>
-                    <p><strong>Likes: {{.LikeCount}}</strong></p>
-                    <p><strong>Dislikes: {{.DislikeCount}}</strong></p>
-                </div>
+                    {{range .Post.Comment}}
+                    <div class="comment">
+                        <p><strong>{{.Username}}:</strong> {{.Text}}</p>
+                        <p><strong>Likes: {{.LikeCount}}</strong></p>
+                        <p><strong>Dislikes: {{.DislikeCount}}</strong></p>
+                    </div>
+                    {{end}}
                 {{end}}
-                {{end}}
+
                 {{if .Authenticated}}
-                <div class="comment">
-                <form class="formComment" action="/posts/{{.Post.ID}}" method="POST">
-                    <input type="text" placeholder="Enter comment" name="text" id="text">
-                </form>
+                    <div class="comment">
+                        <form class="formComment" action="/posts/{{.Post.ID}}" method="POST">
+                            <input type="text" placeholder="Enter comment" name="text" id="text">
+                        </form>
+                    </div>
+                {{end}}
             </div>
-        {{end}}
-        </div>
-           
         </section>
     </main>
+
     <script src="/ui/static/js/comment.js"></script>
 </body>
 </html>
-
-

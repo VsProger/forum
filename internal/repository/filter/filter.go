@@ -14,6 +14,7 @@ type FilterRepo struct {
 type Filter interface {
 	GetPostsByCategories(categories []int) ([]models.Post, error)
 	GetUsersByLikedPosts(userId int) ([]models.Post, error)
+	GetUsersByDislikedPosts(userID int) ([]models.Post, error)
 }
 
 func NewFilterRepo(db *sql.DB) *FilterRepo {
@@ -88,6 +89,37 @@ func (f *FilterRepo) GetUsersByLikedPosts(userID int) ([]models.Post, error) {
 	JOIN User u ON p.AuthorID = u.ID
 	JOIN Reaction r ON p.ID = r.PostID
 	WHERE r.UserID = $1 AND r.Vote = 1
+	`
+	result := []models.Post{}
+	rows, err := f.DB.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var post models.Post
+		if err := rows.Scan(&post.ID, &post.Title, &post.Text, &post.CreationTime, &post.AuthorID, &post.Username); err != nil {
+			return nil, err
+		}
+		post.Categories, err = f.getAllCategoriesByPostId(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, post)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (f *FilterRepo) GetUsersByDislikedPosts(userID int) ([]models.Post, error) {
+	query := `
+	SELECT p.ID, p.Title, p.Text, p.CreationTime, p.AuthorID, u.Username
+	FROM Posts p
+	JOIN User u ON p.AuthorID = u.ID
+	JOIN Reaction r ON p.ID = r.PostID
+	WHERE r.UserID = $1 AND r.Vote = -1
 	`
 	result := []models.Post{}
 	rows, err := f.DB.Query(query, userID)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/VsProger/snippetbox/logger"
@@ -62,6 +63,35 @@ func secureHeaders(next http.Handler) http.Handler {
 func (h *Handler) AllHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logg.Info(r.Method + " successfully working")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *Handler) RoleMiddleware(requiredRole string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Retrieve the session cookie
+		session, err := r.Cookie("session")
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Retrieve the user associated with the session token
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Check if the role matches the required role
+		if user.Role != requiredRole {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		fmt.Print(user.Role)
+
+		// Proceed to the next handler if the role matches
 		next.ServeHTTP(w, r)
 	})
 }

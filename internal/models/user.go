@@ -8,4 +8,5 @@ type User struct {
 	GoogleID   string `json:"google_id,omitempty"`
 	GitHubID   int64  `json:"github_id,omitempty"`
 	OAuthToken string `json:"oauth_token,omitempty"`
+	Role       string `json:"Role"`
 }

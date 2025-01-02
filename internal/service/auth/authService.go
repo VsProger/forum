@@ -18,7 +18,6 @@ type Auth interface {
 	GetUserByToken(token string) (models.User, error)
 	GetUserByEmail(email string) (models.User, error)
 	GetUserByEmailGithub(email string) (models.User, error)
-
 	CheckUser(user *models.User) error
 	GetUserByUsername(username string) (models.User, error)
 	CheckPassword(user models.User) error

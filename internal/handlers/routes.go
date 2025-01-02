@@ -7,12 +7,20 @@ func (h *Handler) Router() http.Handler {
 
 	mux.Handle("/ui/static/", http.StripPrefix("/ui/static/", http.FileServer(http.Dir("./ui/static"))))
 
-	mux.Handle("/myposts", h.AuthMiddleware(http.HandlerFunc(h.userPosts)))
+	mux.Handle("/myposts", h.AuthMiddleware(h.RoleMiddleware("admin", http.HandlerFunc(h.userPosts))))
 	mux.Handle("/filter", http.HandlerFunc(h.filterByCategory))
 	mux.Handle("/mylikedposts", h.AuthMiddleware(http.HandlerFunc(h.likePostsByUser)))
+	mux.Handle("/mydislikedposts", h.AuthMiddleware(http.HandlerFunc(h.dislikePostsByUser)))
+
 	mux.HandleFunc("/posts/reactions", h.addReaction)
 	mux.HandleFunc("/posts/", h.getPost)
+	mux.HandleFunc("/postsdelete/", h.DeletePost)
+	mux.HandleFunc("/postsedit/", h.editPost)
+	mux.HandleFunc("/userComments/", h.userComments)
 	mux.HandleFunc("/posts/create", h.createPost)
+
+	// Comments
+	// Edit Remove posts and comments
 
 	mux.HandleFunc("/auth/google", h.GoogleLoginHandler)
 	mux.HandleFunc("/notifications", h.GetNotificationsHandler)

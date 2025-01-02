@@ -44,6 +44,42 @@ func (h *Handler) likePostsByUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) dislikePostsByUser(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("ui/html/pages/home.html")
+	if err != nil {
+		ErrorHandler(w, http.StatusInternalServerError, "likePosts")
+		return
+	}
+	if r.Method == http.MethodGet {
+		nameFunction := "likePosts"
+		session, err := r.Cookie("session")
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		user, err := h.service.GetUserByToken(session.Value)
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+		posts, err := h.service.FilterByDislikes(user.ID)
+		if err != nil {
+			ErrorHandler(w, http.StatusBadRequest, nameFunction)
+			return
+		}
+		result := map[string]interface{}{
+			"Posts":    posts,
+			"Username": user.Username,
+		}
+		if err = tmpl.Execute(w, result); err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, "likePosts")
+			return
+		}
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "filterByCategory"
 	if r.URL.Path != "/filter" {

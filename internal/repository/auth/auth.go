@@ -69,13 +69,13 @@ func (auth *AuthRepo) CreateGithubUser(user models.User) error {
 }
 
 func (auth *AuthRepo) GetUserByToken(token string) (models.User, error) {
-	query := `SELECT u.ID, u.Email, u.Username, u.Password
+	query := `SELECT u.ID, u.Email, u.Username, u.Password, u.Role
 	        FROM Session INNER JOIN User u
 			ON u.ID = Session.UserID
 			WHERE Session.Token = ?`
 	var user models.User
 
-	if err := auth.DB.QueryRow(query, token).Scan(&user.ID, &user.Email, &user.Username, &user.Password); err != nil {
+	if err := auth.DB.QueryRow(query, token).Scan(&user.ID, &user.Email, &user.Username, &user.Password, &user.Role); err != nil {
 		return user, err
 	}
 	return user, nil
@@ -286,4 +286,19 @@ func (auth *AuthRepo) UpdateUserWithGitHubData(user models.User) error {
 		return fmt.Errorf("unable to update user with GitHub data: %w", err)
 	}
 	return nil
+}
+
+func (r *AuthRepo) GetUserRole(userid string) (models.User, error) {
+	var user models.User
+	query := `SELECT Role FROM User WHERE ID = ?`
+
+	row := r.DB.QueryRow(query, userid)
+	err := row.Scan(&user.Role)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return user, nil
+		}
+		return user, fmt.Errorf("unable to fetch user by userid: %w", err)
+	}
+	return user, nil
 }

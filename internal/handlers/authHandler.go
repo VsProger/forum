@@ -23,11 +23,14 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method == http.MethodGet {
 		var username string
+		var role string
+		var user models.User
 		session, err := r.Cookie("session")
 		if err == nil {
-			user, err := h.service.GetUserByToken(session.Value)
+			user, err = h.service.GetUserByToken(session.Value)
 			if err == nil {
 				username = user.Username
+				role = user.Role
 			}
 		}
 		allPosts, err := h.service.GetPosts()
@@ -36,8 +39,10 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		result := map[string]interface{}{
-			"Posts":    allPosts,
-			"Username": username,
+			"Posts":       allPosts,
+			"CurrentUser": user,
+			"Username":    username,
+			"Role":        role,
 		}
 		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {

@@ -36,7 +36,6 @@ func ErrorHandlerWithTemplate(tmpl *template.Template, w http.ResponseWriter, er
 		ErrorText: errName.Error(),
 	})
 	if err != nil {
-		fmt.Println(555)
 		ErrorHandler(w, http.StatusInternalServerError, "")
 	}
 }

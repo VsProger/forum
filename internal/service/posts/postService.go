@@ -20,6 +20,9 @@ type PostService interface {
 	GetPostsByUserId(user_id int) ([]models.Post, error)
 	AddReaction(reaction models.Reaction) error
 	GetNotificationsByUserID(user_id int) ([]models.Notification, error)
+	GetUserCommentsByUserID(user_id int) ([]models.Post, error)
+	DeletePost(id int) error
+	UpdatePost(post models.Post) error
 }
 
 type postService struct {
@@ -135,6 +138,14 @@ func (s *postService) GetPostsByUserId(user_id int) ([]models.Post, error) {
 	return posts, nil
 }
 
+func (s *postService) GetUserCommentsByUserID(user_id int) ([]models.Post, error) {
+	posts, err := s.postRepo.GetUserCommentsByUserID(user_id)
+	if err != nil {
+		return posts, err
+	}
+	return posts, nil
+}
+
 func (s *postService) AddReaction(reaction models.Reaction) error {
 	if err := s.postRepo.AddReactionToPost(reaction); err != nil {
 		return fmt.Errorf("error adding or updating reaction: %w", err)
@@ -157,7 +168,7 @@ func (s *postService) AddReaction(reaction models.Reaction) error {
 		UserID:    post.AuthorID,
 		PostID:    reaction.PostID,
 		CommentID: reaction.ID,
-		Type:      "new_comment",
+		Type:      "new_like",
 		Message:   message,
 		CreatedAt: time.Now(),
 		IsRead:    false,
@@ -181,4 +192,44 @@ func (s *postService) GetNotificationsByUserID(user_id int) ([]models.Notificati
 	}
 
 	return notifications, nil
+}
+
+func (s *postService) DeletePost(id int) error {
+	// Finally, delete the post
+	if err := s.postRepo.DeletePost(id); err != nil {
+		return fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	// Optional: log the deletion
+	log.Printf("Post with ID %d successfully deleted.", id)
+
+	return nil
+}
+
+func (s *postService) UpdatePost(post models.Post) error {
+	// Validate if the post exists
+	existingPost, err := s.postRepo.GetPostByID(post.ID)
+	if err != nil {
+		return fmt.Errorf("post not found: %w", err)
+	}
+
+	// Update only fields that have new values
+	if post.Title != "" {
+		existingPost.Title = post.Title
+	}
+	if post.Text != "" {
+		existingPost.Text = post.Text
+	}
+	if post.ImageURL != "" {
+		existingPost.ImageURL = post.ImageURL
+	}
+	// Add similar checks for other fields
+
+	// Save the updated post to the repository
+	err = s.postRepo.UpdatePost(*existingPost)
+	if err != nil {
+		return fmt.Errorf("failed to update post: %w", err)
+	}
+
+	return nil
 }
