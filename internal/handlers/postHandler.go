@@ -241,7 +241,8 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		path := "/posts/" + idStr
+		http.Redirect(w, r, path, http.StatusSeeOther)
 		if err := tmpl.Execute(w, result); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
@@ -382,6 +383,7 @@ func (h *Handler) addReaction(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+
 		path := "/posts/" + r.FormValue("postId")
 		http.Redirect(w, r, path, http.StatusSeeOther)
 	} else {

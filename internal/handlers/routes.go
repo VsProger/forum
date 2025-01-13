@@ -7,20 +7,17 @@ func (h *Handler) Router() http.Handler {
 
 	mux.Handle("/ui/static/", http.StripPrefix("/ui/static/", http.FileServer(http.Dir("./ui/static"))))
 
-	mux.Handle("/myposts", h.AuthMiddleware(h.RoleMiddleware("admin", http.HandlerFunc(h.userPosts))))
+	mux.Handle("/myposts", h.AuthMiddleware(http.HandlerFunc(h.userPosts)))
 	mux.Handle("/filter", http.HandlerFunc(h.filterByCategory))
 	mux.Handle("/mylikedposts", h.AuthMiddleware(http.HandlerFunc(h.likePostsByUser)))
 	mux.Handle("/mydislikedposts", h.AuthMiddleware(http.HandlerFunc(h.dislikePostsByUser)))
+	mux.Handle("/posts/create", h.AuthMiddleware(http.HandlerFunc(h.createPost)))
+	mux.Handle("/posts/reactions", h.AuthMiddleware(http.HandlerFunc(h.addReaction)))
+	mux.Handle("/postsdelete/", h.AuthMiddleware(http.HandlerFunc(h.DeletePost)))
+	mux.Handle("/postsedit/", h.AuthMiddleware(http.HandlerFunc(h.editPost)))
 
-	mux.HandleFunc("/posts/reactions", h.addReaction)
 	mux.HandleFunc("/posts/", h.getPost)
-	mux.HandleFunc("/postsdelete/", h.DeletePost)
-	mux.HandleFunc("/postsedit/", h.editPost)
 	mux.HandleFunc("/userComments/", h.userComments)
-	mux.HandleFunc("/posts/create", h.createPost)
-
-	// Comments
-	// Edit Remove posts and comments
 
 	mux.HandleFunc("/auth/google", h.GoogleLoginHandler)
 	mux.HandleFunc("/notifications", h.GetNotificationsHandler)
@@ -37,23 +34,3 @@ func (h *Handler) Router() http.Handler {
 
 	return h.AllHandler(mux)
 }
-
-// func (h *Handler) routes() http.Handler {
-// 	router := httprouter.New()
-
-// 	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		h.notFound(w)
-// 	})
-
-// 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-// 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
-
-// 	router.HandlerFunc(http.MethodGet, "/", app.home)
-// 	router.HandlerFunc(http.MethodGet, "/post/view/:id", app.postView)
-// 	router.HandlerFunc(http.MethodGet, "/post/create", app.showPostCreate)
-// 	router.HandlerFunc(http.MethodPost, "/post/create", app.doPostCreate)
-
-// 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
-
-// 	return standard.Then(router)
-// }

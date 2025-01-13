@@ -15,9 +15,12 @@
     </header>
 
     <main>
+
         <section id="post-details">
             <div class="post-info">
                 <p><strong>Username: {{.Post.Username}}</strong></p>
+                <img src="{{.Post.ImageURL}}" alt="{{.Title}}" class="img-fluid mb-3 rounded" />
+
                 <p><strong>{{.Post.Title}}</strong></p>
                 <p><strong>Text: {{.Post.Text}}</strong></p>
                 <p><strong>Genre: {{range $i, $cat := .Post.Categories}}{{if $i}}, {{end}}{{ $cat.Name }}{{- end}}</strong></p>
