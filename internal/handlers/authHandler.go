@@ -15,6 +15,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+
+
 func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "indexHandler"
 	if r.URL.Path != "/" {
@@ -315,7 +317,6 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "Register"
 	if r.URL.Path != "/register" {
-
 		ErrorHandler(w, http.StatusNotFound, nameFunction)
 		return
 	}
@@ -350,7 +351,6 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 		if err := h.service.CheckUser(user); err != nil {
-			log.Fatal(err, "Dasdaad")
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

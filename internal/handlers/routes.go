@@ -13,7 +13,14 @@ func (h *Handler) Router() http.Handler {
 	mux.Handle("/mydislikedposts", h.AuthMiddleware(http.HandlerFunc(h.dislikePostsByUser)))
 	mux.Handle("/posts/create", h.AuthMiddleware(http.HandlerFunc(h.createPost)))
 	mux.Handle("/posts/reactions", h.AuthMiddleware(http.HandlerFunc(h.addReaction)))
-	mux.Handle("/postsdelete/", h.AuthMiddleware(http.HandlerFunc(h.DeletePost)))
+	mux.Handle("/postsdelete/", h.RoleMiddleware([]string{"admin", "moderator"}, http.HandlerFunc(h.DeletePost)))
+
+	///todo
+	// mux.Handle("/posts/report", h.RoleMiddleware([]string{"moderator"}, http.HandlerFunc(h.)))
+	// mux.Handle("/user/upgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.)))
+	// mux.Handle("/user/downgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.)))
+	mux.Handle("/adminpage", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.adminpage)))
+
 	mux.Handle("/postsedit/", h.AuthMiddleware(http.HandlerFunc(h.editPost)))
 
 	mux.HandleFunc("/posts/", h.getPost)

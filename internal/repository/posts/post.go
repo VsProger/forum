@@ -26,6 +26,8 @@ type Posts interface {
 	GetUserCommentsByUserID(userID int) ([]models.Post, error)
 	DeletePost(postID int) error
 	UpdatePost(post models.Post) error
+
+	GetUsers() ([]models.User, error)
 }
 
 type PostRepo struct {
@@ -566,4 +568,34 @@ func (r *PostRepo) UpdatePost(post models.Post) error {
 	default:
 		return fmt.Errorf("unsupported number of parameters: %d", len(params))
 	}
+}
+
+// GetUsers retrieves all users from the database
+func (r *PostRepo) GetUsers() ([]models.User, error) {
+	query := "SELECT ID, Username, Email, Role FROM User;"
+
+	rows, err := r.DB.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+
+	for rows.Next() {
+		var user models.User
+
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Role)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %w", err)
+	}
+
+	return users, nil
 }

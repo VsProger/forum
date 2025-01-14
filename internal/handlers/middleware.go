@@ -67,7 +67,7 @@ func (h *Handler) AllHandler(next http.Handler) http.Handler {
 	})
 }
 
-func (h *Handler) RoleMiddleware(requiredRole string, next http.Handler) http.Handler {
+func (h *Handler) RoleMiddleware(requiredRoles []string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Retrieve the session cookie
 		session, err := r.Cookie("session")
@@ -83,13 +83,19 @@ func (h *Handler) RoleMiddleware(requiredRole string, next http.Handler) http.Ha
 			return
 		}
 
-		// Check if the role matches the required role
-		if user.Role != requiredRole {
+		hasAccess := false
+		for _, role := range requiredRoles {
+			fmt.Println(role, user.Role)
+			if user.Role == role {
+				hasAccess = true
+				break
+			}
+		}
+
+		if !hasAccess {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
 		}
-
-		fmt.Print(user.Role)
 
 		// Proceed to the next handler if the role matches
 		next.ServeHTTP(w, r)

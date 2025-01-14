@@ -23,6 +23,8 @@ type PostService interface {
 	GetUserCommentsByUserID(user_id int) ([]models.Post, error)
 	DeletePost(id int) error
 	UpdatePost(post models.Post) error
+
+	GetUsers() ([]models.User, error)
 }
 
 type postService struct {
@@ -37,6 +39,10 @@ func NewPostService(postRepo posts.Posts) PostService {
 
 func (s *postService) GetPosts() ([]models.Post, error) {
 	return s.postRepo.GetPosts()
+}
+
+func (s *postService) GetUsers() ([]models.User, error) {
+	return s.postRepo.GetUsers()
 }
 
 func (s *postService) CreatePost(post models.Post) error {
