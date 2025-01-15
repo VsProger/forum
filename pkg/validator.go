@@ -10,7 +10,6 @@ import (
 
 	"github.com/VsProger/snippetbox/internal/models"
 	"github.com/gofrs/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -154,8 +153,12 @@ func ValidateUsername(username string) error {
 }
 
 func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
+	if password != hash {
+		return false
+	}
+	return true
+	//err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	//return err == nil
 }
 
 func GenerateToken() string {

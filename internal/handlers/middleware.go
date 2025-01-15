@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/VsProger/snippetbox/logger"
@@ -85,8 +84,7 @@ func (h *Handler) RoleMiddleware(requiredRoles []string, next http.Handler) http
 
 		hasAccess := false
 		for _, role := range requiredRoles {
-			fmt.Println(role, user.Role)
-			if user.Role == role {
+			if *user.Role == role {
 				hasAccess = true
 				break
 			}

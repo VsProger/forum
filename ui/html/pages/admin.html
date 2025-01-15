@@ -10,17 +10,58 @@
     
 </head>
 <body>
+<h1>Admin Page</h1>
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Actions</th>
+    </tr>
+    {{range .Users}}
+    <tr>
+        <td>{{.ID}}</td>
+        <td>{{.Username}}</td>
+        <td>{{.Email}}</td>
+        <td>{{.Role}}</td>
+        <td>
+            <form method="post" action="/user/upgrade">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <button type="submit">Upgrade to Moderator</button>
+            </form>
 
+            <form method="POST" action="/user/downgrade">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <button type="submit">Downgrade to User</button>
+            </form>
 
+        </td>
+    </tr>
+    {{end}}
+</table>
 
-        <h1>Admin Page</h1>
-
-        <p>{{.Users}}</p>
-        <p>{{.CurrentUser}}</p>
-        <p>{{.Username}}</p>
-        <p>{{.Role}}</p>
-    
-
-
+    <h1>Reports</h1>
+    <table border="1">
+        <tr>
+            <th>Username</th>
+            <th>Post Title</th>
+            <th>Reason</th>
+            <th>Actions</th>
+        </tr>
+        {{range .Reports}}
+        <tr>
+            <td>{{.UserName}}</td>
+            <td>{{.PostTitle}}</td>
+            <td>{{.ReportReason}}</td>
+            <td>
+                <form method="post" action="/postsdelete/{{.PostID}}">
+                    <input type="hidden" name="id" value="{{.PostID}}">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {{end}}
+</table>
 </body>
 </html>

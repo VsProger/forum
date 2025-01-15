@@ -42,7 +42,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 }
 
 func (auth *AuthRepo) CreateUser(user models.User) error {
-	query := `INSERT INTO User (Username, Email, Password) VALUES ($1, $2, $3)`
+	query := `INSERT INTO User (Username, Email, Password, Role) VALUES ($1, $2, $3, 'user')`
 	_, err := auth.DB.Exec(query, user.Username, user.Email, user.Password)
 	if err != nil {
 		return fmt.Errorf("unable to create user: %w", err)
@@ -51,7 +51,7 @@ func (auth *AuthRepo) CreateUser(user models.User) error {
 }
 
 func (auth *AuthRepo) CreateGoogleUser(user models.User) error {
-	query := `INSERT INTO User (Username, Email, Password, GoogleID) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO User (Username, Email, Password, GoogleID, Role) VALUES ($1, $2, $3, $4, 'user')`
 	_, err := auth.DB.Exec(query, user.Username, user.Email, user.Password, user.GoogleID)
 	if err != nil {
 		return fmt.Errorf("unable to create user: %w", err)
@@ -60,7 +60,7 @@ func (auth *AuthRepo) CreateGoogleUser(user models.User) error {
 }
 
 func (auth *AuthRepo) CreateGithubUser(user models.User) error {
-	query := `INSERT INTO User (Username, Email, Password, GitHubID) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO User (Username, Email, Password, GitHubID, Role) VALUES ($1, $2, $3, $4, 'user')`
 	_, err := auth.DB.Exec(query, user.Username, user.Email, user.Password, user.GitHubID)
 	if err != nil {
 		return fmt.Errorf("unable to create user: %w", err)

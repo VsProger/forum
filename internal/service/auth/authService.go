@@ -105,7 +105,7 @@ func (a *AuthService) UpdateUserWithGoogleData(token string) error {
 	}
 
 	// Update user with the new Google data
-	err = a.repo.UpdateUserWithGoogleData(user.GoogleID)
+	err = a.repo.UpdateUserWithGoogleData(*user.GoogleID)
 	if err != nil {
 		return err
 	}
@@ -153,13 +153,13 @@ func (a *AuthService) CheckUser(user *models.User) error {
 }
 
 func (a *AuthService) CheckPassword(user models.User) error {
-	// checkedUser, err := a.repo.GetUserByEmail(user.Email)
-	// if err != nil {
-	// 	return models.ErrUserNotFound
-	// }
-	// // if !pkg.CheckPasswordHash(user.Password, checkedUser.Password) {
-	// // 	return models.ErrInvalidPassword
-	// // }
+	checkedUser, err := a.repo.GetUserByEmail(user.Email)
+	if err != nil {
+		return models.ErrUserNotFound
+	}
+	if !pkg.CheckPasswordHash(user.Password, checkedUser.Password) {
+		return models.ErrInvalidPassword
+	}
 	return nil
 }
 

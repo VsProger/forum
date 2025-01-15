@@ -25,6 +25,10 @@ type PostService interface {
 	UpdatePost(post models.Post) error
 
 	GetUsers() ([]models.User, error)
+	UpgradeUser(user_id int) error
+	Downgrade(user_id int) error
+	ReportPost(postID int, userID int, reason string) error
+	GetReports() ([]models.Report, error)
 }
 
 type postService struct {
@@ -238,4 +242,33 @@ func (s *postService) UpdatePost(post models.Post) error {
 	}
 
 	return nil
+}
+
+func (s *postService) UpgradeUser(user_id int) error {
+	if err := s.postRepo.UpgradeUser(user_id); err != nil {
+		return fmt.Errorf("failed to upgrade user: %w", err)
+	}
+	return nil
+}
+
+func (s *postService) Downgrade(user_id int) error {
+	if err := s.postRepo.DowngradeUser(user_id); err != nil {
+		return fmt.Errorf("failed to upgrade user: %w", err)
+	}
+	return nil
+}
+
+func (s *postService) ReportPost(postID int, userID int, reason string) error {
+	if err := s.postRepo.ReportPost(postID, userID, reason); err != nil {
+		return fmt.Errorf("failed to report post: %w", err)
+	}
+	return nil
+}
+
+func (s *postService) GetReports() ([]models.Report, error) {
+	reports, err := s.postRepo.GetReports()
+	if err != nil {
+		return reports, fmt.Errorf("failed to retrieve reports: %w", err)
+	}
+	return reports, nil
 }

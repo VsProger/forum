@@ -43,6 +43,12 @@
                         </form>
                     {{end}}
                 </p>
+                <p><strong>Report</strong>
+                    <form method="POST" action="/posts/report">
+                        <input type="hidden" name="postId" value="{{.Post.ID}}">
+                        <button type="submit" class="report-button">Report</button>
+                    </form>
+                </p>
 
                 <!-- Add a delete post form for the post owner -->
                 {{if eq .Post.Username $.CurrentUser.Username}}

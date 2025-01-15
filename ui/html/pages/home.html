@@ -157,7 +157,7 @@
                             // Изначально скрываем контейнер уведомлений
                             document.getElementById('notifications').style.display = 'none';
                         </script>
-
+                        <li class="nav-item"><a class="nav-link" href="/adminpage">Admin Page</a></li>
                         <li class="nav-item"><a class="nav-link" href="/posts/create">Create Post</a></li>
                         <li class="nav-item"><a class="nav-link" href="/myposts">My Posts</a></li>
                         <li class="nav-item"><a class="nav-link" href="/userComments/">My commented posts</a></li>
@@ -223,16 +223,17 @@
                         </a>
                         
                         <!-- Добавим кнопку удаления, если роль администратора -->
-                        {{if eq .Username $.CurrentUser.Username}}
+                        {{if or (eq $.Role "admin") (eq $.Role "moderator")}}
                         <form action="/postsdelete/{{.ID}}" method="POST" class="mt-3">
                             <button type="submit" class="btn btn-danger btn-sm">Delete Post</button>
                         </form>
-
+                        {{end}}
+                        {{if eq $.CurrentUser.Username .Username}}
                         <form method="GET" action="/postsedit/{{.ID}}" enctype="multipart/form-data">
                             <button type="submit" class="btn btn-danger btn-sm">Edit Post</button>
                         </form>
-                    {{end}}
-                    
+                        {{end}}
+
                     </div>
                 </div>
                 {{end}}

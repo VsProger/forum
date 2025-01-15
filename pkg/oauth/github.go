@@ -72,7 +72,7 @@ func GetGitHubUserInfo(accessToken string) (*models.User, error) {
 
 	// Возвращаем информацию о пользователе
 	return &models.User{
-		GitHubID: githubUser.GitHubID,
+		GitHubID: &githubUser.GitHubID,
 		Username: githubUser.Username,
 		Email:    githubUser.Email,
 	}, nil

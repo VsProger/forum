@@ -16,9 +16,9 @@ func (h *Handler) Router() http.Handler {
 	mux.Handle("/postsdelete/", h.RoleMiddleware([]string{"admin", "moderator"}, http.HandlerFunc(h.DeletePost)))
 
 	///todo
-	// mux.Handle("/posts/report", h.RoleMiddleware([]string{"moderator"}, http.HandlerFunc(h.)))
-	// mux.Handle("/user/upgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.)))
-	// mux.Handle("/user/downgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.)))
+	mux.Handle("/posts/report", h.RoleMiddleware([]string{"moderator"}, http.HandlerFunc(h.reportPost)))
+	mux.Handle("/user/upgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.upgradeOrDowngradeUser)))
+	mux.Handle("/user/downgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.upgradeOrDowngradeUser)))
 	mux.Handle("/adminpage", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.adminpage)))
 
 	mux.Handle("/postsedit/", h.AuthMiddleware(http.HandlerFunc(h.editPost)))
