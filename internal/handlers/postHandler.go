@@ -21,7 +21,7 @@ const maxImageSize = 20 * 1024 * 1024
 
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "CreatePost"
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/createPost.html")
+	tmpl, err := template.ParseFiles("ui/html/pages/createPost.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
@@ -154,7 +154,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "getPost"
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/post.html")
+	tmpl, err := template.ParseFiles("ui/html/pages/post.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, "getPost")
 		return
@@ -173,12 +173,14 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var username string
+		var role string
 
 		session, err := r.Cookie("session")
 		if err == nil {
 			user, err := h.service.GetUserByToken(session.Value)
 			if err == nil {
 				username = user.Username
+				role = user.Role
 
 				if err != nil {
 					ErrorHandler(w, http.StatusInternalServerError, nameFunction)
@@ -190,6 +192,7 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 		result := map[string]interface{}{
 			"Post":          post,
 			"Authenticated": username,
+			"Role":          role,
 		}
 
 		if err = tmpl.Execute(w, result); err != nil {
@@ -223,9 +226,11 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+		fmt.Print(user.Role, "asdaarole")
 		result := map[string]interface{}{
 			"Post":          post,
 			"Authenticated": user.Username,
+			"Role":          user.Role,
 		}
 		comment := models.Comment{
 			Text:     r.FormValue("text"),
@@ -241,7 +246,8 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		path := "/posts/" + idStr
+		http.Redirect(w, r, path, http.StatusSeeOther)
 		if err := tmpl.Execute(w, result); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
@@ -253,11 +259,12 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleError(w http.ResponseWriter, functionName string, statusCode int, err error) {
 	log.Printf("Error in %s: %v", functionName, err)
+
 	http.Error(w, err.Error(), statusCode)
 }
 
 func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
+	tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, "getPost")
 		return
@@ -284,6 +291,7 @@ func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
 			"Posts":       posts,
 			"CurrentUser": user,
 			"Username":    user.Username,
+			"Role":        user.Role,
 		}
 		if err = tmpl.Execute(w, result); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, "userPosts")
@@ -295,7 +303,7 @@ func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) userComments(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
+	tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, "getComments")
 		return
@@ -382,6 +390,7 @@ func (h *Handler) addReaction(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+
 		path := "/posts/" + r.FormValue("postId")
 		http.Redirect(w, r, path, http.StatusSeeOther)
 	} else {
@@ -508,17 +517,17 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Fetch the post by ID to verify if it exists
-		post, err := h.service.GetPostByID(id)
-		if err != nil {
-			ErrorHandler(w, http.StatusNotFound, nameFunction)
-			return
-		}
+		//post, err := h.service.GetPostByID(id)
+		//if err != nil {
+		//	ErrorHandler(w, http.StatusNotFound, nameFunction)
+		//	return
+		//}
 
 		// Ensure the user is the author of the post
-		if post.AuthorID != user.ID {
-			ErrorHandler(w, http.StatusForbidden, nameFunction)
-			return
-		}
+		//if post.AuthorID != user.ID {
+		//	ErrorHandler(w, http.StatusForbidden, nameFunction)
+		//	return
+		//}
 
 		// Delete the post (this may include deleting related data like reactions or comments)
 		if err := h.service.PostService.DeletePost(id); err != nil {
@@ -526,7 +535,10 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
-
+		if user.Role == "admin" && r.URL.Path == "/adminpage" {
+			http.Redirect(w, r, "/adminpage", http.StatusSeeOther)
+			return
+		}
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 		// Respond with a success message or appropriate redirection
@@ -538,7 +550,7 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "editpost"
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/editpost.html")
+	tmpl, err := template.ParseFiles("ui/html/pages/editpost.html")
 	if err != nil {
 
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)

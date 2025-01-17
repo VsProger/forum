@@ -19,7 +19,7 @@ type DB struct {
 }
 
 func NewConfig() (*Config, error) {
-	configFile := "./config/config.json"
+	configFile := "pkg/config/config.json"
 	data, err := os.ReadFile(configFile)
 	if err != nil {
 		log.Printf("ERROR: Read file in config encountered problem: %v", err)

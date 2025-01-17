@@ -22,6 +22,7 @@ func NewApp(cfg config.Config) *App {
 
 func (app *App) Run() error {
 	logger := logger.NewLogger()
+
 	db, err := storage.NewSqlite(app.cfg)
 	if err != nil {
 		return err
@@ -46,6 +47,8 @@ func (app *App) Run() error {
 
 	logger.Info("Server successfully started!")
 	fmt.Printf("Server running on http://localhost%v\n", app.cfg.Port)
+
+	// return http.ListenAndServeTLS(app.cfg.Port, "cert.pem", "key.pem", handler.Router())
 
 	return http.ListenAndServe(app.cfg.Port, handler.Router())
 }

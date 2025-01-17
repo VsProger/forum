@@ -16,7 +16,7 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
-	configFile := "/home/student/forum/pkg/config/config.json"
+	configFile := "pkg/config/config.json"
 	data, err := os.ReadFile(configFile)
 
 	fmt.Print(string(data), "\n")

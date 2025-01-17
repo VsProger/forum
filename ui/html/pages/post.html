@@ -15,9 +15,12 @@
     </header>
 
     <main>
+
         <section id="post-details">
             <div class="post-info">
                 <p><strong>Username: {{.Post.Username}}</strong></p>
+                <img src="{{.Post.ImageURL}}" alt="{{.Title}}" class="img-fluid mb-3 rounded" />
+
                 <p><strong>{{.Post.Title}}</strong></p>
                 <p><strong>Text: {{.Post.Text}}</strong></p>
                 <p><strong>Genre: {{range $i, $cat := .Post.Categories}}{{if $i}}, {{end}}{{ $cat.Name }}{{- end}}</strong></p>
@@ -39,6 +42,14 @@
                             <button type="submit" class="like-button">Dislike</button>
                         </form>
                     {{end}}
+                </p>
+                {{if eq $.Role "moderator"}}
+                <p><strong>Report</strong>
+                    <form method="POST" action="/posts/report">
+                        <input type="hidden" name="postId" value="{{.Post.ID}}">
+                        <button type="submit" class="report-button">Report</button>
+                    </form>
+                {{end}}
                 </p>
 
                 <!-- Add a delete post form for the post owner -->

@@ -23,6 +23,12 @@ type PostService interface {
 	GetUserCommentsByUserID(user_id int) ([]models.Post, error)
 	DeletePost(id int) error
 	UpdatePost(post models.Post) error
+
+	GetUsers() ([]models.User, error)
+	UpgradeUser(user_id int) error
+	Downgrade(user_id int) error
+	ReportPost(postID int, userID int, reason string) error
+	GetReports() ([]models.Report, error)
 }
 
 type postService struct {
@@ -37,6 +43,10 @@ func NewPostService(postRepo posts.Posts) PostService {
 
 func (s *postService) GetPosts() ([]models.Post, error) {
 	return s.postRepo.GetPosts()
+}
+
+func (s *postService) GetUsers() ([]models.User, error) {
+	return s.postRepo.GetUsers()
 }
 
 func (s *postService) CreatePost(post models.Post) error {
@@ -150,6 +160,11 @@ func (s *postService) AddReaction(reaction models.Reaction) error {
 	if err := s.postRepo.AddReactionToPost(reaction); err != nil {
 		return fmt.Errorf("error adding or updating reaction: %w", err)
 	}
+	if reaction.CommentID != 0 {
+		if err := s.postRepo.AddReactionToComment(reaction); err != nil {
+			return fmt.Errorf("error adding or updating reaction: %w", err)
+		}
+	}
 
 	// Получение поста для уведомления
 	post, err := s.postRepo.GetPostByID(reaction.PostID)
@@ -232,4 +247,33 @@ func (s *postService) UpdatePost(post models.Post) error {
 	}
 
 	return nil
+}
+
+func (s *postService) UpgradeUser(user_id int) error {
+	if err := s.postRepo.UpgradeUser(user_id); err != nil {
+		return fmt.Errorf("failed to upgrade user: %w", err)
+	}
+	return nil
+}
+
+func (s *postService) Downgrade(user_id int) error {
+	if err := s.postRepo.DowngradeUser(user_id); err != nil {
+		return fmt.Errorf("failed to upgrade user: %w", err)
+	}
+	return nil
+}
+
+func (s *postService) ReportPost(postID int, userID int, reason string) error {
+	if err := s.postRepo.ReportPost(postID, userID, reason); err != nil {
+		return fmt.Errorf("failed to report post: %w", err)
+	}
+	return nil
+}
+
+func (s *postService) GetReports() ([]models.Report, error) {
+	reports, err := s.postRepo.GetReports()
+	if err != nil {
+		return reports, fmt.Errorf("failed to retrieve reports: %w", err)
+	}
+	return reports, nil
 }

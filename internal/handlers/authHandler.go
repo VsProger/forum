@@ -35,6 +35,7 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		}
 		allPosts, err := h.service.GetPosts()
 		if err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -46,10 +47,12 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
 		if err = tmpl.Execute(w, result); err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -121,7 +124,7 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		newUser := models.User{
 			Username: userInfo.Name,
 			Email:    userInfo.Email,
-			GoogleID: userInfo.GoogleID,
+			GoogleID: &userInfo.GoogleID,
 		}
 		fmt.Print(newUser)
 		err := h.service.Auth.CreateUserGoogle(newUser)
@@ -132,8 +135,8 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		user = newUser
 	} else {
 		// Если пользователь существует, обновляем его данные, если необходимо
-		if user.GoogleID == "" {
-			user.GoogleID = userInfo.GoogleID
+		if *user.GoogleID == "" {
+			*user.GoogleID = userInfo.GoogleID
 			err := h.service.Auth.UpdateUserWithGoogleData(userInfo.ID)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unable to update user with Google data: %s", err), http.StatusInternalServerError)
@@ -218,7 +221,7 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		}
 		user = newUser
 
-	} else if user.GitHubID == 0 {
+	} else if *user.GitHubID == 0 {
 		// Update the existing user with GitHub data
 		user.GitHubID = userInfo.GitHubID
 		user.Username = userInfo.Username
@@ -260,7 +263,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, http.StatusNotFound, nameFunction)
 		return
 	}
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/login.html")
+	tmpl, err := template.ParseFiles("ui/html/pages/login.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
@@ -315,11 +318,10 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	nameFunction := "Register"
 	if r.URL.Path != "/register" {
-
 		ErrorHandler(w, http.StatusNotFound, nameFunction)
 		return
 	}
-	tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/signup.html")
+	tmpl, err := template.ParseFiles("ui/html/pages/signup.html")
 	if err != nil {
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 		return
@@ -339,7 +341,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		}
 		checkUser, err := h.service.GetUserByEmail(user.Email)
 		if checkUser.Email == user.Email {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email already used"), http.StatusBadRequest)
 			return
 		}
@@ -350,7 +352,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 		if err := h.service.CheckUser(user); err != nil {
-			log.Fatal(err, "Dasdaad")
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

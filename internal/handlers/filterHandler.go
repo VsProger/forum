@@ -88,7 +88,7 @@ func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		tmpl, err := template.ParseFiles("/home/student/forum/ui/html/pages/home.html")
+		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {
 
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
