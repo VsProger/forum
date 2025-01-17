@@ -30,11 +30,12 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 			user, err = h.service.GetUserByToken(session.Value)
 			if err == nil {
 				username = user.Username
-				role = *user.Role
+				role = user.Role
 			}
 		}
 		allPosts, err := h.service.GetPosts()
 		if err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -46,10 +47,12 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
 		if err = tmpl.Execute(w, result); err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -338,7 +341,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		}
 		checkUser, err := h.service.GetUserByEmail(user.Email)
 		if checkUser.Email == user.Email {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email already used"), http.StatusBadRequest)
 			return
 		}
@@ -349,6 +352,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 		if err := h.service.CheckUser(user); err != nil {
+			log.Fatal(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

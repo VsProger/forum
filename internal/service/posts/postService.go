@@ -160,6 +160,11 @@ func (s *postService) AddReaction(reaction models.Reaction) error {
 	if err := s.postRepo.AddReactionToPost(reaction); err != nil {
 		return fmt.Errorf("error adding or updating reaction: %w", err)
 	}
+	if reaction.CommentID != 0 {
+		if err := s.postRepo.AddReactionToComment(reaction); err != nil {
+			return fmt.Errorf("error adding or updating reaction: %w", err)
+		}
+	}
 
 	// Получение поста для уведомления
 	post, err := s.postRepo.GetPostByID(reaction.PostID)

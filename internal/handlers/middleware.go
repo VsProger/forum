@@ -84,7 +84,7 @@ func (h *Handler) RoleMiddleware(requiredRoles []string, next http.Handler) http
 
 		hasAccess := false
 		for _, role := range requiredRoles {
-			if *user.Role == role {
+			if user.Role == role {
 				hasAccess = true
 				break
 			}

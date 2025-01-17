@@ -173,12 +173,14 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var username string
+		var role string
 
 		session, err := r.Cookie("session")
 		if err == nil {
 			user, err := h.service.GetUserByToken(session.Value)
 			if err == nil {
 				username = user.Username
+				role = user.Role
 
 				if err != nil {
 					ErrorHandler(w, http.StatusInternalServerError, nameFunction)
@@ -190,6 +192,7 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 		result := map[string]interface{}{
 			"Post":          post,
 			"Authenticated": username,
+			"Role":          role,
 		}
 
 		if err = tmpl.Execute(w, result); err != nil {
@@ -223,9 +226,11 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+		fmt.Print(user.Role, "asdaarole")
 		result := map[string]interface{}{
 			"Post":          post,
 			"Authenticated": user.Username,
+			"Role":          user.Role,
 		}
 		comment := models.Comment{
 			Text:     r.FormValue("text"),
@@ -254,6 +259,7 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleError(w http.ResponseWriter, functionName string, statusCode int, err error) {
 	log.Printf("Error in %s: %v", functionName, err)
+
 	http.Error(w, err.Error(), statusCode)
 }
 
@@ -285,7 +291,7 @@ func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
 			"Posts":       posts,
 			"CurrentUser": user,
 			"Username":    user.Username,
-			"Role":        *user.Role,
+			"Role":        user.Role,
 		}
 		if err = tmpl.Execute(w, result); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, "userPosts")
@@ -529,7 +535,7 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
-		if *user.Role == "admin" && r.URL.Path == "/adminpage" {
+		if user.Role == "admin" && r.URL.Path == "/adminpage" {
 			http.Redirect(w, r, "/adminpage", http.StatusSeeOther)
 			return
 		}

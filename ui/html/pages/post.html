@@ -43,11 +43,13 @@
                         </form>
                     {{end}}
                 </p>
+                {{if eq $.Role "moderator"}}
                 <p><strong>Report</strong>
                     <form method="POST" action="/posts/report">
                         <input type="hidden" name="postId" value="{{.Post.ID}}">
                         <button type="submit" class="report-button">Report</button>
                     </form>
+                {{end}}
                 </p>
 
                 <!-- Add a delete post form for the post owner -->

@@ -25,7 +25,7 @@ func (h *Handler) adminpage(w http.ResponseWriter, r *http.Request) {
 			user, err = h.service.GetUserByToken(session.Value)
 			if err == nil {
 				username = user.Username
-				role = *user.Role
+				role = user.Role
 			}
 		}
 		allUsers, err := h.service.GetUsers()
