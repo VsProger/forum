@@ -222,6 +222,7 @@ func (s *postService) DeletePost(id int) error {
 }
 
 func (s *postService) UpdatePost(post models.Post) error {
+
 	// Validate if the post exists
 	existingPost, err := s.postRepo.GetPostByID(post.ID)
 	if err != nil {
@@ -238,9 +239,13 @@ func (s *postService) UpdatePost(post models.Post) error {
 	if post.ImageURL != "" {
 		existingPost.ImageURL = post.ImageURL
 	}
-	// Add similar checks for other fields
+
+	if post.Categories != nil {
+		existingPost.Categories = post.Categories
+	}
 
 	// Save the updated post to the repository
+
 	err = s.postRepo.UpdatePost(*existingPost)
 	if err != nil {
 		return fmt.Errorf("failed to update post: %w", err)

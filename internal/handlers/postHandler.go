@@ -608,7 +608,8 @@ func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
 		categories := r.Form["categories"]
 		post := models.Post{
 			Title: r.FormValue("title"),
-			Text:  r.FormValue("text"),
+
+			Text: r.FormValue("text"),
 		}
 
 		// Handle file upload

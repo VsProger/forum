@@ -529,49 +529,58 @@ func (r *PostRepo) DeletePost(postID int) error {
 }
 
 func (r *PostRepo) UpdatePost(post models.Post) error {
-	// Prepare the dynamic query
-	query := "UPDATE Posts SET "
-	params := make([]interface{}, 0) // Create a slice of type []interface{}
-	paramIndex := 1
+	tx, err := r.DB.Begin()
+	if err != nil {
+		log.Printf("error starting transaction: %v", err)
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	defer tx.Rollback()
 
-	// Dynamically build parts of the SQL query
-	if post.Title != "" {
-		query += fmt.Sprintf("Title = $%d, ", paramIndex)
-		params = append(params, post.Title)
-		paramIndex++
-	}
-	if post.Text != "" {
-		query += fmt.Sprintf("Text = $%d, ", paramIndex)
-		params = append(params, post.Text)
-		paramIndex++
-	}
-	if post.ImageURL != "" {
-		query += fmt.Sprintf("ImageURL = $%d, ", paramIndex)
-		params = append(params, post.ImageURL)
-		paramIndex++
+	// Update the main post details
+	query := `
+		UPDATE Posts 
+		SET Title = ?, Text = ?, ImageURL = ? 
+		WHERE ID = ?`
+	_, err = tx.Exec(query, post.Title, post.Text, post.ImageURL, post.ID)
+	if err != nil {
+		log.Printf("error updating post: %v", err)
+		return fmt.Errorf("error updating post: %w", err)
 	}
 
-	// Remove the trailing comma and space, then add WHERE clause
-	query = query[:len(query)-2] + fmt.Sprintf(" WHERE id = $%d", paramIndex)
-	params = append(params, post.ID)
-
-	// Manually pass each element of params
-	switch len(params) {
-	case 1:
-		_, err := r.DB.Exec(query, params[0])
-		return err
-	case 2:
-		_, err := r.DB.Exec(query, params[0], params[1])
-		return err
-	case 3:
-		_, err := r.DB.Exec(query, params[0], params[1], params[2])
-		return err
-	case 4:
-		_, err := r.DB.Exec(query, params[0], params[1], params[2], params[3])
-		return err
-	default:
-		return fmt.Errorf("unsupported number of parameters: %d", len(params))
+	// Clear existing categories for the post
+	_, err = tx.Exec(`DELETE FROM PostCategory WHERE PostID = ?`, post.ID)
+	if err != nil {
+		log.Printf("error deleting old categories: %v", err)
+		return fmt.Errorf("error deleting old categories: %w", err)
 	}
+
+	for _, category := range post.Categories {
+
+		cat, err := r.GetCategoryByName(category.Name)
+		if err != nil {
+			log.Printf("error retrieving category by name: %v", err)
+			return fmt.Errorf("error retrieving category by name: %w", err)
+		}
+
+		for _, v := range cat {
+			_, err = tx.Exec(`
+				INSERT INTO PostCategory (PostID, CategoryID)
+				VALUES (?, ?)
+			`, post.ID, v.ID)
+			if err != nil {
+				log.Printf("error inserting category: %v", err)
+				return fmt.Errorf("error inserting category: %w", err)
+			}
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("error committing transaction: %v", err)
+		return fmt.Errorf("error committing transaction: %w", err)
+	}
+
+	return nil
 }
 
 // GetUsers retrieves all users from the database
