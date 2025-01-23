@@ -47,12 +47,12 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {
-			log.Fatal(err)
+
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
 		if err = tmpl.Execute(w, result); err != nil {
-			log.Fatal(err)
+
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -63,35 +63,33 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
-	// Получаем конфигурацию OAuth
+
 	config := oauth.GetGoogleOAuth2Config()
 
-	// Генерация URL для авторизации
 	url := config.AuthCodeURL(oauth.GetGoogleOAuth2State(), oauth2.AccessTypeOffline)
 
-	// Перенаправление пользователя на страницу авторизации Google
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	// Получение код авторизации из параметров URL
+
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Error(w, "Code not found", http.StatusBadRequest)
 		return
 	}
 
-	// Получаем конфигурацию OAuth
+	log.Printf("Получен код авторизации: %s", code)
+
 	config := oauth.GetGoogleOAuth2Config()
 
-	// Обмен кода на токен
 	token, err := config.Exchange(r.Context(), code)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Unable to exchange the token: %s", err), http.StatusInternalServerError)
+		log.Printf("Error exchanging code: %v", err)
+		http.Error(w, fmt.Sprintf("Unable to exchange the token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Используем токен для получения информации о пользователе
 	client := config.Client(r.Context(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v1/userinfo?alt=json")
 	if err != nil {
@@ -122,6 +120,7 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	if user.ID == 0 {
 		// Если пользователь не существует, создаем нового
 		newUser := models.User{
+
 			Username: userInfo.Name,
 			Email:    userInfo.Email,
 			GoogleID: &userInfo.GoogleID,
@@ -152,7 +151,6 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	fmt.Print(sessionToken)
 	// Сохраняем сессионный токен в cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
@@ -291,7 +289,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 		realUser, err := h.service.Auth.GetUserByEmail(user.Email)
 		if err != nil {
-			log.Fatal(err)
+
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -375,23 +373,35 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
+		// Получаем куку сессии
 		sessionCookie, err := r.Cookie("session")
 		if err != nil {
+			// Если кука не найдена, ошибку не генерируем (пользователь может быть не в системе)
+			if err == http.ErrNoCookie {
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+
+		// Удаляем сессию на сервере
 		if err := h.service.Auth.DeleteSession(sessionCookie.Value); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+
+		// Удаляем cookie сессии
 		http.SetCookie(w, &http.Cookie{
 			Name:   "session",
 			Value:  "",
-			MaxAge: -1,
+			MaxAge: -1,  // Это удаляет куку
+			Path:   "/", // Обязательно указываем путь, чтобы она была удалена на всех страницах
 		})
+
+		// Перенаправляем пользователя на главную страницу
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	default:
 		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
-		return
 	}
 }

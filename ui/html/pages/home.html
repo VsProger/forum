@@ -8,9 +8,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
     <title>Cinema Forum</title>
     <style>
+        .notification {
+        padding: 10px;
+        margin: 5px;
+        border: 1px solid #dbbe19;
+        border-radius: 5px;
+        background-color: #080606;
+        color: #ca0000; /* Стандартный цвет текста */
+    }
+
+    .notification.new-comment {
+        color: #06d709; /* Синий цвет для новых комментариев */
+    }
+
+    .notification.error {
+        color: #dc3545; /* Красный цвет для ошибок */
+    }
+
+    .notification.success {
+        color: #030804; /* Зеленый цвет для успешных уведомлений */
+    }
         body {
             font-family: 'Segoe UI', sans-serif;
-            background-color: #f4f4f9;
+            background-color: #0000f8;
             background-image: url("/ui/static/img/cinema.jpg");
             background-attachment: fixed;
             background-repeat: no-repeat;
@@ -20,12 +40,12 @@
 
         header {
             background-color: #343a40;
-            color: #fff;
+            color: #fd0000d3;
             padding: 20px;
         }
 
         header nav a {
-            color: #fff;
+            color: #ff9100;
             text-decoration: none;
             margin-right: 20px;
         }
@@ -135,7 +155,7 @@
                                         notificationContainer.innerHTML = ''; // Очищаем контейнер перед добавлением новых уведомлений
                                         data.notifications.forEach(notification => {
                                             const notificationElement = document.createElement('div');
-                                            notificationElement.innerText = `Новый комментарий на ваш пост от пользователя ${notification.UserID}: ${notification.Message}`;
+                                            notificationElement.innerText = `Новый реакция на ваш пост от пользователя ${notification.Username}`;
                                             notificationContainer.appendChild(notificationElement);
                                         });
                                     })

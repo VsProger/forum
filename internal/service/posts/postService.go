@@ -113,6 +113,11 @@ func (s *postService) CreateComment(comment models.Comment) error {
 		return fmt.Errorf("comment created, but failed to retrieve post for notification: %w", err)
 	}
 
+	user, err := s.postRepo.GetUserByID(comment.AuthorID) // Метод получения пользователя по ID
+	if err != nil {
+
+		return fmt.Errorf("failed to get user for notification: %w", err)
+	}
 	// Формирование уведомления
 	notification := models.Notification{
 		UserID:    post.AuthorID,
@@ -122,6 +127,7 @@ func (s *postService) CreateComment(comment models.Comment) error {
 		Message:   fmt.Sprintf("Your post '%s' received a new comment: %s", post.Title, comment.Text),
 		CreatedAt: time.Now(),
 		IsRead:    false,
+		Username:  user.Username,
 	}
 
 	// Сохранение уведомления в БД
@@ -158,10 +164,12 @@ func (s *postService) GetUserCommentsByUserID(user_id int) ([]models.Post, error
 
 func (s *postService) AddReaction(reaction models.Reaction) error {
 	if err := s.postRepo.AddReactionToPost(reaction); err != nil {
+		log.Fatal(err)
 		return fmt.Errorf("error adding or updating reaction: %w", err)
 	}
 	if reaction.CommentID != 0 {
 		if err := s.postRepo.AddReactionToComment(reaction); err != nil {
+			log.Fatal(err)
 			return fmt.Errorf("error adding or updating reaction: %w", err)
 		}
 	}
@@ -169,6 +177,7 @@ func (s *postService) AddReaction(reaction models.Reaction) error {
 	// Получение поста для уведомления
 	post, err := s.postRepo.GetPostByID(reaction.PostID)
 	if err != nil {
+		log.Fatal(err)
 		return fmt.Errorf("reaction added, but failed to retrieve post for notification: %w", err)
 	}
 
@@ -179,6 +188,13 @@ func (s *postService) AddReaction(reaction models.Reaction) error {
 	}
 	message := fmt.Sprintf("Your post '%s' was %s by a user.", post.Title, action)
 
+	user, err := s.postRepo.GetUserByID(reaction.UserID) // Метод получения пользователя по ID
+	if err != nil {
+
+		log.Fatal(err)
+		return fmt.Errorf("failed to get user for notification: %w", err)
+	}
+
 	notification := models.Notification{
 		UserID:    post.AuthorID,
 		PostID:    reaction.PostID,
@@ -187,11 +203,13 @@ func (s *postService) AddReaction(reaction models.Reaction) error {
 		Message:   message,
 		CreatedAt: time.Now(),
 		IsRead:    false,
+		Username:  user.Username,
 	}
 
 	// Асинхронная отправка уведомления
 	go func() {
 		if err := s.postRepo.CreateNotification(notification); err != nil {
+			log.Fatal(err)
 			log.Printf("failed to send notification: %v", err)
 		}
 	}()
@@ -202,6 +220,7 @@ func (s *postService) AddReaction(reaction models.Reaction) error {
 func (s *postService) GetNotificationsByUserID(user_id int) ([]models.Notification, error) {
 	notifications, err := s.postRepo.GetNotificationsForUser(user_id)
 	if err != nil {
+
 		log.Fatal(err)
 		return nil, fmt.Errorf("failed to retrieve notifications: %w", err)
 	}

@@ -176,7 +176,7 @@ func (r *AuthRepo) GetUserByGoogleID(googleID string) (models.User, error) {
 
 func (r *AuthRepo) GetUserByGithubID(githubID string) (models.User, error) {
 	var user models.User
-	query := `SELECT ID, Username, Email, GoogleID FROM User WHERE GoogleID = ?`
+	query := `SELECT ID, Username, Email, GithubID FROM User WHERE GithubID = ?`
 
 	row := r.DB.QueryRow(query, githubID)
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.GitHubID)
@@ -203,11 +203,14 @@ func (auth *AuthRepo) UpdateUserWithGoogleData(id string) error {
 func (repo *AuthRepo) GetUserFromGoogleToken(token string) (models.User, error) {
 	// Initialize Google OAuth2 config
 	googleOauth2Config := oauth2.Config{
-		ClientID:     "474394525572-vj65k8l3fnv0p0pp1i0c2ve31bnu137f.apps.googleusercontent.com",
-		ClientSecret: "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",
+		ClientID:     "474394525572-pbrh9edm251u9d04e0l9l7qtqiq217bg.apps.googleusercontent.com",
+		ClientSecret: "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",
 		RedirectURL:  "http://localhost:8081/auth/google/callback",
-		Scopes:       []string{"email", "profile"},
-		Endpoint:     google.Endpoint,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		Endpoint: google.Endpoint,
 	}
 
 	// Use Google OAuth2 config to create a client and fetch user info

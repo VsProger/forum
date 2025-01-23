@@ -26,7 +26,7 @@ type Posts interface {
 	GetUserCommentsByUserID(userID int) ([]models.Post, error)
 	DeletePost(postID int) error
 	UpdatePost(post models.Post) error
-
+	GetUserByID(userID int) (models.User, error)
 	GetUsers() ([]models.User, error)
 	UpgradeUser(user_id int) error
 	DowngradeUser(user_id int) error
@@ -397,19 +397,30 @@ func (p *PostRepo) AddReactionToComment(reaction models.Reaction) error {
 
 func (r *PostRepo) CreateNotification(notification models.Notification) error {
 	query := `
-		INSERT INTO Notifications (UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead)
-		VALUES (?, ?, ?, ?, ?, ?, false)
+		INSERT INTO Notifications (UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead, Username)
+		VALUES (?, ?, ?, ?, ?, ?, false, ?)
 	`
-	_, err := r.DB.Exec(query, notification.UserID, notification.PostID, notification.CommentID, notification.Type, notification.Message, notification.CreatedAt)
+
+	_, err := r.DB.Exec(query, notification.UserID, notification.PostID, notification.CommentID, notification.Type, notification.Message, notification.CreatedAt, notification.Username)
 	if err != nil {
 		return fmt.Errorf("error creating notification: %w", err)
 	}
 	return nil
 }
 
+func (r *PostRepo) GetUserByID(userID int) (models.User, error) {
+	var user models.User
+	query := `SELECT * FROM User WHERE ID = ?`
+	err := r.DB.QueryRow(query, userID).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleID, &user.GitHubID, &user.Role)
+	if err != nil {
+		return models.User{}, fmt.Errorf("failed to retrieve user: %w", err)
+	}
+	return user, nil
+}
+
 func (r *PostRepo) GetNotificationsForUser(userID int) ([]models.Notification, error) {
 	query := `
-    SELECT ID, UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead
+    SELECT ID, UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead, Username
     FROM Notifications
     WHERE UserID = ? ORDER BY CreatedAt DESC
     `
@@ -422,16 +433,24 @@ func (r *PostRepo) GetNotificationsForUser(userID int) ([]models.Notification, e
 	var notifications []models.Notification
 	for rows.Next() {
 		var notification models.Notification
-		if err := rows.Scan(&notification.ID, &notification.UserID, &notification.PostID, &notification.CommentID, &notification.Type, &notification.Message, &notification.CreatedAt, &notification.IsRead); err != nil {
+		if err := rows.Scan(&notification.ID, &notification.UserID, &notification.PostID, &notification.CommentID, &notification.Type, &notification.Message, &notification.CreatedAt, &notification.IsRead, &notification.Username); err != nil {
 			return nil, fmt.Errorf("error scanning notification: %w", err)
 		}
+
+		// Handle the Username field (check if it's NULL)
+		if notification.Username != "" {
+			// If the Username is not NULL, we can access notification.Username.String
+		} else {
+			// If it's NULL, you can handle it accordingly
+			notification.Username = "" // Or whatever default value you want
+		}
+
 		notifications = append(notifications, notification)
 	}
 
 	// Return notifications and nil for error (no error occurred)
 	return notifications, nil
 }
-
 func (r *PostRepo) GetUserCommentsByUserID(userID int) ([]models.Post, error) {
 	query := `
 	SELECT DISTINCT 

@@ -5,19 +5,18 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-var (
-	// Конфигурация OAuth 2.0 для Google
-	OAuth2Config = oauth2.Config{
-		ClientID:     "474394525572-vj65k8l3fnv0p0pp1i0c2ve31bnu137f.apps.googleusercontent.com", // Получите эти данные из Google Developer Console
-		ClientSecret: "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",                                      // Получите эти данные из Google Developer Console
-		RedirectURL:  "http://localhost:8081/auth/google/callback",                               // URL перенаправления
-		Scopes:       []string{"email", "profile"},
-		Endpoint:     google.Endpoint,
-	}
+var OAuth2Config = oauth2.Config{
+	ClientID:     "474394525572-pbrh9edm251u9d04e0l9l7qtqiq217bg.apps.googleusercontent.com",
+	ClientSecret: "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",
+	RedirectURL:  "http://localhost:8081/auth/google/callback",
+	Scopes: []string{
+		"https://www.googleapis.com/auth/userinfo.email",
+		"https://www.googleapis.com/auth/userinfo.profile",
+	},
+	Endpoint: google.Endpoint,
+}
 
-	// Для защиты от CSRF атак генерируем случайную строку
-	OAuth2StateString = "random"
-)
+var OAuth2StateString = "random"
 
 func GetGoogleOAuth2Config() oauth2.Config {
 	return OAuth2Config
