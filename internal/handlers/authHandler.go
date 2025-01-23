@@ -170,13 +170,13 @@ func (h *Handler) githubLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GitHubLoginHandler(w http.ResponseWriter, r *http.Request) {
-	// Генерация URL для авторизации GitHub
+
 	url := oauth.GitHubAuthURL()
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	// Получение токена через колбэк
+
 	token, err := oauth.GitHubCallback(r)
 	if err != nil {
 		log.Printf("GitHub Callback Error: %v", err)
@@ -184,7 +184,6 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Получение данных пользователя из GitHub API
 	userInfo, err := oauth.GetGitHubUserInfo(token.AccessToken)
 	if err != nil {
 
@@ -193,9 +192,6 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	fmt.Print(userInfo.Email)
-
-	// Проверка существующего пользователя или создание нового
 	user, err := h.service.Auth.GetUserByEmailGithub(userInfo.Email)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("Database Error: %v", err)
@@ -203,10 +199,8 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	fmt.Printf("Eto nash ID %d", user.ID)
-
 	if user.ID == 0 {
-		// Создание нового пользователя
+
 		newUser := models.User{
 			Username: userInfo.Username,
 			Email:    userInfo.Email,
@@ -220,7 +214,7 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		user = newUser
 
 	} else if *user.GitHubID == 0 {
-		// Update the existing user with GitHub data
+
 		user.GitHubID = userInfo.GitHubID
 		user.Username = userInfo.Username
 		user.Email = userInfo.Email
@@ -234,7 +228,6 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// Создание сессии
 	sessionToken, err := h.service.Auth.SetSession(&user)
 	if err != nil {
 		log.Printf("Session Error: %v", err)
@@ -242,7 +235,6 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Установка cookie с токеном
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    sessionToken,

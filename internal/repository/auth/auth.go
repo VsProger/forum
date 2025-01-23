@@ -166,8 +166,7 @@ func (r *AuthRepo) GetUserByGoogleID(googleID string) (models.User, error) {
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.GoogleID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Если пользователя с таким GoogleID не существует, возвращаем nil
-			return user, nil
+			return user, fmt.Errorf("user with GoogleID %s not found", googleID)
 		}
 		return user, fmt.Errorf("unable to fetch user by GoogleID: %w", err)
 	}
@@ -182,15 +181,14 @@ func (r *AuthRepo) GetUserByGithubID(githubID string) (models.User, error) {
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.GitHubID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Если пользователя с таким GoogleID не существует, возвращаем nil
-			return user, nil
+
+			return user, fmt.Errorf("user with GithubID %s not found", githubID)
 		}
-		return user, fmt.Errorf("unable to fetch user by GoogleID: %w", err)
+		return user, fmt.Errorf("unable to fetch user by GithubID: %w", err)
 	}
 	return user, nil
 }
 
-// Обновить пользователя с данными Google
 func (auth *AuthRepo) UpdateUserWithGoogleData(id string) error {
 	query := `UPDATE User SET GoogleID = $1 WHERE GoogleID = ''`
 	_, err := auth.DB.Exec(query, id)
@@ -242,27 +240,23 @@ func (repo *AuthRepo) GetUserFromGoogleToken(token string) (models.User, error) 
 }
 
 func (repo *AuthRepo) GetUserFromGitHubToken(token string) (models.User, error) {
-	// Define the URL to fetch GitHub user info
+
 	const githubUserInfoURL = "https://api.github.com/user"
 
-	// Create an HTTP client to fetch user info
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", githubUserInfoURL, nil)
 	if err != nil {
 		return models.User{}, err
 	}
 
-	// Set the Authorization header with the token
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	// Execute the request
 	resp, err := client.Do(req)
 	if err != nil {
 		return models.User{}, err
 	}
 	defer resp.Body.Close()
 
-	// Decode the response into a GitHub user struct
 	var githubUser struct {
 		ID       string `json:"id"`
 		Username string `json:"login"`
@@ -272,13 +266,11 @@ func (repo *AuthRepo) GetUserFromGitHubToken(token string) (models.User, error) 
 		return models.User{}, err
 	}
 
-	// Find the user by their GitHub ID (or email, depending on your implementation)
 	user, err := repo.GetUserByGithubID(githubUser.ID)
 	if err != nil {
 		return models.User{}, err
 	}
 
-	// Return the user information
 	return user, nil
 }
 
