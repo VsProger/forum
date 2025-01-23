@@ -337,6 +337,12 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
 		}
+
+		if len(user.Email) > 64 {
+			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email should be shorter than 64 symbols"), http.StatusBadRequest)
+			return
+		}
+
 		checkUser, err := h.service.GetUserByEmail(user.Email)
 		if checkUser.Email == user.Email {
 			log.Println(err)
