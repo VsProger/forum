@@ -283,14 +283,14 @@ func (a *AuthService) UpdateUserWithGitHubData(token string) error {
 	// Get the user by the token (likely the GitHub ID)
 	user, err := a.repo.GetUserFromGitHubToken(token) // Assuming this method retrieves the user based on the GitHub token
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
 	// Update user with the new GitHub data
 	err = a.repo.UpdateUserWithGitHubData(user)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 

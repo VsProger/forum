@@ -10,3 +10,10 @@ type User struct {
 	OAuthToken string  `json:"oauth_token,omitempty"`
 	Role       string  `json:"Role"`
 }
+
+const (
+	AdminRole     string = "admin"
+	UserRole      string = "user"
+	ModeratorRole string = "moderator"
+	GuestRole     string = "guest"
+)

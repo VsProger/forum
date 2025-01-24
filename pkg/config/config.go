@@ -22,13 +22,13 @@ func NewConfig() (*Config, error) {
 	fmt.Print(string(data), "\n")
 	if err != nil {
 		log.Printf("ERROR: Read file in config encountered problem: %v", err)
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 	var config Config
 	if err := json.Unmarshal(data, &config); err != nil {
 		log.Printf("ERROR: Unmarshalling in config encountered problem: %v", err)
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 

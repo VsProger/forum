@@ -32,10 +32,11 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 				username = user.Username
 				role = user.Role
 			}
+
 		}
 		allPosts, err := h.service.GetPosts()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -47,12 +48,12 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
 		if err = tmpl.Execute(w, result); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -291,7 +292,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 		realUser, err := h.service.Auth.GetUserByEmail(user.Email)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -332,12 +333,13 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		if err := tmpl.Execute(w, nil); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
-		} // s
+		}
 	case "POST":
 		user := &models.User{
 			Username: r.FormValue("username"),
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
+			Role:     models.UserRole,
 		}
 		checkUser, err := h.service.GetUserByEmail(user.Email)
 		if checkUser.Email == user.Email {
@@ -345,14 +347,14 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email already used"), http.StatusBadRequest)
 			return
 		}
-		// checkUser, err = h.service.GetUserByUsername(user.Username)
-		// if checkUser.Username == user.Username {
-		// 	log.Fatal(err, "adsadalol")
-		// 	ErrorHandlerWithTemplate(tmpl, w, errors.New("Username already used"), http.StatusBadRequest)
-		// 	return
-		// }
+
+		if len(user.Email) < 6 || len(user.Email) > 254 {
+			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email must be between 6 and 254 characters"), http.StatusBadRequest)
+			return
+		}
+
 		if err := h.service.CheckUser(user); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

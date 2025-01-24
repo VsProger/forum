@@ -114,7 +114,7 @@ func (h *Handler) filterByCategory(w http.ResponseWriter, r *http.Request) {
 		}
 		category, err := h.service.GetCategoryByName(categories)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

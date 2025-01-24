@@ -42,8 +42,8 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 }
 
 func (auth *AuthRepo) CreateUser(user models.User) error {
-	query := `INSERT INTO User (Username, Email, Password, Role) VALUES ($1, $2, $3, 'user')`
-	_, err := auth.DB.Exec(query, user.Username, user.Email, user.Password)
+	query := `INSERT INTO User (Username, Email, Password, Role) VALUES ($1, $2, $3, $4)`
+	_, err := auth.DB.Exec(query, user.Username, user.Email, user.Password, user.Role)
 	if err != nil {
 		return fmt.Errorf("unable to create user: %w", err)
 	}
