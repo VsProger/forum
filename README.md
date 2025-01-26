@@ -32,12 +32,6 @@ or use make file
   make run
 ```
 
-or use docker
-
-```bash
-  make build
-  make run
-```
 
 in order to stop container use next command
 
