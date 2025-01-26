@@ -40,11 +40,20 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+
+		isRequestSent, err := h.service.CheckRequest(user.ID)
+		if err != nil {
+			log.Println(err)
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+
 		result := map[string]interface{}{
 			"Posts":       allPosts,
 			"CurrentUser": user,
 			"Username":    username,
 			"Role":        role,
+			"RequestSent": isRequestSent,
 		}
 		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {

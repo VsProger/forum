@@ -79,12 +79,12 @@
             <td>{{.Username}}</td>
             <td>{{.Email}}</td>
             <td>
-                <form method="post" action="/user/approve/{{.ID}}">
-                    <input type="hidden" name="id" value="{{.PostID}}">
+                <form method="POST" action="/user/approve">
+                    <input type="hidden" name="id" value="{{.ID}}">
                     <button type="submit">Approve</button>
                 </form>
-                <form method="post" action="/user/decline/{{.ID}}">
-                    <input type="hidden" name="id" value="{{.PostID}}">
+                <form method="POST" action="/user/decline">
+                    <input type="hidden" name="id" value="{{.ID}}">
                     <button type="submit">Reject</button>
                 </form>
             </td>

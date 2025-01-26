@@ -10,7 +10,7 @@ build:
 
 # Запуск контейнера
 run: build
-	docker run -d --name $(CONTAINER_NAME) -p $(PORT):8080 $(IMAGE_NAME)
+	docker run -d --name $(CONTAINER_NAME) -p $(PORT):8081 $(IMAGE_NAME)
 
 # Остановка контейнера
 stop:

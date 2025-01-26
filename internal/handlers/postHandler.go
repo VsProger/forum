@@ -169,7 +169,7 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		post, err := h.service.GetPostByID(id)
-		if err != nil || idStr == "" || len(idStr) > 2 || id > 50 || id <= 0 {
+		if err != nil || idStr == "" || id <= 0 {
 			log.Println(err)
 			ErrorHandler(w, http.StatusNotFound, nameFunction)
 			return
@@ -289,11 +289,19 @@ func (h *Handler) userPosts(w http.ResponseWriter, r *http.Request) {
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
+
+		isRequestSent, err := h.service.CheckRequest(user.ID)
+		if err != nil {
+			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+			return
+		}
+
 		result := map[string]interface{}{
 			"Posts":       posts,
 			"CurrentUser": user,
 			"Username":    user.Username,
 			"Role":        user.Role,
+			"RequestSent": isRequestSent,
 		}
 		if err = tmpl.Execute(w, result); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, "userPosts")

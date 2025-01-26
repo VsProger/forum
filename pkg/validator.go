@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"regexp"
 	"strconv"
@@ -150,12 +151,12 @@ func ValidateUsername(username string) error {
 }
 
 func CheckPasswordHash(password, hash string) bool {
-	if password != hash {
-		return false
-	}
-	return true
-	//err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	//return err == nil
+	//if password != hash {
+	//	return false
+	//}
+	//return true
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
 func GenerateToken() string {

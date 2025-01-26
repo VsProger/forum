@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"time"
 
@@ -65,6 +66,11 @@ func (a *AuthService) CreateUser(user models.User) error {
 	if err != nil {
 		return err
 	}
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hashPassword)
 	return a.repo.CreateUser(user)
 }
 

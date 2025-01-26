@@ -48,7 +48,7 @@ func (app *App) Run() error {
 	logger.Info("Server successfully started!")
 	fmt.Printf("Server running on http://localhost%v\n", app.cfg.Port)
 
-	// return http.ListenAndServeTLS(app.cfg.Port, "cert.pem", "key.pem", handler.Router())
+	return http.ListenAndServeTLS(app.cfg.Port, "cert.pem", "key.pem", handler.Router())
 
-	return http.ListenAndServe(app.cfg.Port, handler.Router())
+	//return http.ListenAndServe(app.cfg.Port, handler.Router())
 }
