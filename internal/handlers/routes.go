@@ -1,6 +1,9 @@
 package handlers
 
-import "net/http"
+import (
+	"github.com/VsProger/snippetbox/internal/models"
+	"net/http"
+)
 
 func (h *Handler) Router() http.Handler {
 	mux := http.NewServeMux()
@@ -13,13 +16,14 @@ func (h *Handler) Router() http.Handler {
 	mux.Handle("/mydislikedposts", h.AuthMiddleware(http.HandlerFunc(h.dislikePostsByUser)))
 	mux.Handle("/posts/create", h.AuthMiddleware(http.HandlerFunc(h.createPost)))
 	mux.Handle("/posts/reactions", h.AuthMiddleware(http.HandlerFunc(h.addReaction)))
-	mux.Handle("/postsdelete/", h.RoleMiddleware([]string{"admin", "moderator"}, http.HandlerFunc(h.DeletePost)))
-
-	///todo
-	mux.Handle("/posts/report", h.RoleMiddleware([]string{"moderator"}, http.HandlerFunc(h.reportPost)))
-	mux.Handle("/user/upgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.upgradeOrDowngradeUser)))
-	mux.Handle("/user/downgrade", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.upgradeOrDowngradeUser)))
-	mux.Handle("/adminpage", h.RoleMiddleware([]string{"admin"}, http.HandlerFunc(h.adminpage)))
+	mux.Handle("/postsdelete/", h.RoleMiddleware([]string{models.AdminRole, models.ModeratorRole}, http.HandlerFunc(h.DeletePost)))
+	mux.Handle("/user/request", h.RoleMiddleware([]string{models.UserRole}, http.HandlerFunc(h.requestRole)))
+	mux.Handle("/user/approve", h.RoleMiddleware([]string{models.AdminRole}, http.HandlerFunc(h.approveUser)))
+	mux.Handle("/user/decline", h.RoleMiddleware([]string{models.AdminRole}, http.HandlerFunc(h.declineUser)))
+	mux.Handle("/posts/report", h.RoleMiddleware([]string{models.ModeratorRole}, http.HandlerFunc(h.reportPost)))
+	mux.Handle("/user/upgrade", h.RoleMiddleware([]string{models.AdminRole}, http.HandlerFunc(h.upgradeOrDowngradeUser)))
+	mux.Handle("/user/downgrade", h.RoleMiddleware([]string{models.AdminRole}, http.HandlerFunc(h.upgradeOrDowngradeUser)))
+	mux.Handle("/adminpage", h.RoleMiddleware([]string{models.AdminRole}, http.HandlerFunc(h.adminpage)))
 
 	mux.Handle("/postsedit/", h.AuthMiddleware(http.HandlerFunc(h.editPost)))
 

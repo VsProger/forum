@@ -107,7 +107,8 @@ func ValidateComment(comment models.Comment) error {
 }
 
 func ValidateEmail(email string) error {
-	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$`)
+
 	if !re.MatchString(email) {
 		return ErrInvalidEmail
 	}

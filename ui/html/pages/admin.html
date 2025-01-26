@@ -62,6 +62,34 @@
             </td>
         </tr>
         {{end}}
+
+    </table>
+
+<h1>Raise Request</h1>
+<table>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+        {{range .Requests}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td>{{.Username}}</td>
+            <td>{{.Email}}</td>
+            <td>
+                <form method="post" action="/user/approve/{{.ID}}">
+                    <input type="hidden" name="id" value="{{.PostID}}">
+                    <button type="submit">Approve</button>
+                </form>
+                <form method="post" action="/user/decline/{{.ID}}">
+                    <input type="hidden" name="id" value="{{.PostID}}">
+                    <button type="submit">Reject</button>
+                </form>
+            </td>
+        </tr>
+        {{end}}
 </table>
 </body>
 </html>

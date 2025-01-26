@@ -290,12 +290,13 @@ func (a *AuthService) UpdateUserWithGitHubData(token string) error {
 	user, err := a.repo.GetUserFromGitHubToken(token)
 	if err != nil {
 
+		log.Println(err)
 		return err
 	}
 
 	err = a.repo.UpdateUserWithGitHubData(user)
 	if err != nil {
-
+		log.Println(err)
 		return err
 	}
 

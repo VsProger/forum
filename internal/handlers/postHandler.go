@@ -43,7 +43,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		// Get session and user
 		session, err := r.Cookie("session")
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -143,6 +143,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 
 		post.AuthorID = user.ID
 		if err := h.service.PostService.CreatePost(post); err != nil {
+			log.Println(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -169,7 +170,7 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 		}
 		post, err := h.service.GetPostByID(id)
 		if err != nil || idStr == "" || len(idStr) > 2 || id > 50 || id <= 0 {
-
+			log.Println(err)
 			ErrorHandler(w, http.StatusNotFound, nameFunction)
 			return
 		}
@@ -220,7 +221,7 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 		post, err := h.service.GetPostByID(id)
 		if err != nil {
 			if idStr == "" || len(idStr) > 2 || id > 50 || id <= 0 {
-				log.Fatal(err)
+				log.Println(err)
 				ErrorHandler(w, http.StatusNotFound, nameFunction)
 				return
 			}
@@ -324,7 +325,7 @@ func (h *Handler) userComments(w http.ResponseWriter, r *http.Request) {
 		}
 		posts, err := h.service.GetUserCommentsByUserID(user.ID)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -356,7 +357,7 @@ func (h *Handler) addReaction(w http.ResponseWriter, r *http.Request) {
 		}
 		postId, err := pkg.Atoi(r.FormValue("postId"))
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusNotFound, nameFunction)
 			return
 		}
@@ -384,7 +385,7 @@ func (h *Handler) addReaction(w http.ResponseWriter, r *http.Request) {
 				ErrorHandler(w, http.StatusBadRequest, nameFunction)
 				return
 			} else if strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
-				log.Fatal(err)
+				log.Println(err)
 				ErrorHandler(w, http.StatusNotFound, nameFunction)
 				return
 			}
@@ -545,7 +546,7 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 
 		// Delete the post (this may include deleting related data like reactions or comments)
 		if err := h.service.PostService.DeletePost(id); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -608,7 +609,7 @@ func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
 		// Get session and user
 		session, err := r.Cookie("session")
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -714,7 +715,7 @@ func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
 
 		// Update the post in the database
 		if err := h.service.PostService.UpdatePost(post); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}

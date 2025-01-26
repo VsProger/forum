@@ -32,10 +32,11 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 				username = user.Username
 				role = user.Role
 			}
+
 		}
 		allPosts, err := h.service.GetPosts()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -47,12 +48,12 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl, err := template.ParseFiles("ui/html/pages/home.html")
 		if err != nil {
-
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
 		if err = tmpl.Execute(w, result); err != nil {
-
+			log.Println(err)
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
@@ -83,13 +84,14 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 
 	config := oauth.GetGoogleOAuth2Config()
 
+	// Обмен кода на токен
 	token, err := config.Exchange(r.Context(), code)
 	if err != nil {
-		log.Printf("Error exchanging code: %v", err)
-		http.Error(w, fmt.Sprintf("Unable to exchange the token: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Unable to exchange the token: %s", err), http.StatusInternalServerError)
 		return
 	}
 
+	// Используем токен для получения информации о пользователе
 	client := config.Client(r.Context(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v1/userinfo?alt=json")
 	if err != nil {
@@ -120,7 +122,6 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	if user.ID == 0 {
 		// Если пользователь не существует, создаем нового
 		newUser := models.User{
-
 			Username: userInfo.Name,
 			Email:    userInfo.Email,
 			GoogleID: &userInfo.GoogleID,
@@ -151,6 +152,7 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	fmt.Print(sessionToken)
 	// Сохраняем сессионный токен в cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
@@ -170,13 +172,13 @@ func (h *Handler) githubLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GitHubLoginHandler(w http.ResponseWriter, r *http.Request) {
-
+	// Генерация URL для авторизации GitHub
 	url := oauth.GitHubAuthURL()
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) {
-
+	// Получение токена через колбэк
 	token, err := oauth.GitHubCallback(r)
 	if err != nil {
 		log.Printf("GitHub Callback Error: %v", err)
@@ -184,6 +186,7 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Получение данных пользователя из GitHub API
 	userInfo, err := oauth.GetGitHubUserInfo(token.AccessToken)
 	if err != nil {
 
@@ -192,6 +195,9 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	fmt.Print(userInfo.Email)
+
+	// Проверка существующего пользователя или создание нового
 	user, err := h.service.Auth.GetUserByEmailGithub(userInfo.Email)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("Database Error: %v", err)
@@ -199,8 +205,10 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if user.ID == 0 {
+	fmt.Printf("Eto nash ID %d", user.ID)
 
+	if user.ID == 0 {
+		// Создание нового пользователя
 		newUser := models.User{
 			Username: userInfo.Username,
 			Email:    userInfo.Email,
@@ -214,7 +222,7 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		user = newUser
 
 	} else if *user.GitHubID == 0 {
-
+		// Update the existing user with GitHub data
 		user.GitHubID = userInfo.GitHubID
 		user.Username = userInfo.Username
 		user.Email = userInfo.Email
@@ -228,6 +236,7 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
+	// Создание сессии
 	sessionToken, err := h.service.Auth.SetSession(&user)
 	if err != nil {
 		log.Printf("Session Error: %v", err)
@@ -235,6 +244,7 @@ func (h *Handler) GitHubCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Установка cookie с токеном
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    sessionToken,
@@ -322,33 +332,28 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		if err := tmpl.Execute(w, nil); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
-		} // s
+		}
 	case "POST":
 		user := &models.User{
 			Username: r.FormValue("username"),
 			Email:    r.FormValue("email"),
 			Password: r.FormValue("password"),
+			Role:     models.UserRole,
 		}
-
-		if len(user.Email) > 64 {
-			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email should be shorter than 64 symbols"), http.StatusBadRequest)
-			return
-		}
-
 		checkUser, err := h.service.GetUserByEmail(user.Email)
 		if checkUser.Email == user.Email {
 			log.Println(err)
 			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email already used"), http.StatusBadRequest)
 			return
 		}
-		// checkUser, err = h.service.GetUserByUsername(user.Username)
-		// if checkUser.Username == user.Username {
-		// 	log.Fatal(err, "adsadalol")
-		// 	ErrorHandlerWithTemplate(tmpl, w, errors.New("Username already used"), http.StatusBadRequest)
-		// 	return
-		// }
+
+		if len(user.Email) < 6 || len(user.Email) > 254 {
+			ErrorHandlerWithTemplate(tmpl, w, errors.New("Email must be between 6 and 254 characters"), http.StatusBadRequest)
+			return
+		}
+
 		if err := h.service.CheckUser(user); err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -401,5 +406,6 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	default:
 		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)
+		return
 	}
 }
