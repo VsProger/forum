@@ -391,19 +391,30 @@ func (p *PostRepo) AddReactionToComment(reaction models.Reaction) error {
 
 func (r *PostRepo) CreateNotification(notification models.Notification) error {
 	query := `
-		INSERT INTO Notifications (UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead)
-		VALUES (?, ?, ?, ?, ?, ?, false)
+		INSERT INTO Notifications (UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead, Username)
+		VALUES (?, ?, ?, ?, ?, ?, false, ?)
 	`
-	_, err := r.DB.Exec(query, notification.UserID, notification.PostID, notification.CommentID, notification.Type, notification.Message, notification.CreatedAt)
+
+	_, err := r.DB.Exec(query, notification.UserID, notification.PostID, notification.CommentID, notification.Type, notification.Message, notification.CreatedAt, notification.Username)
 	if err != nil {
 		return fmt.Errorf("error creating notification: %w", err)
 	}
 	return nil
 }
 
+func (r *PostRepo) GetUserByID(userID int) (models.User, error) {
+	var user models.User
+	query := `SELECT * FROM User WHERE ID = ?`
+	err := r.DB.QueryRow(query, userID).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleID, &user.GitHubID, &user.Role)
+	if err != nil {
+		return models.User{}, fmt.Errorf("failed to retrieve user: %w", err)
+	}
+	return user, nil
+}
+
 func (r *PostRepo) GetNotificationsForUser(userID int) ([]models.Notification, error) {
 	query := `
-    SELECT ID, UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead
+    SELECT ID, UserID, PostID, CommentID, Type, Message, CreatedAt, IsRead, Username
     FROM Notifications
     WHERE UserID = ? ORDER BY CreatedAt DESC
     `
@@ -416,16 +427,24 @@ func (r *PostRepo) GetNotificationsForUser(userID int) ([]models.Notification, e
 	var notifications []models.Notification
 	for rows.Next() {
 		var notification models.Notification
-		if err := rows.Scan(&notification.ID, &notification.UserID, &notification.PostID, &notification.CommentID, &notification.Type, &notification.Message, &notification.CreatedAt, &notification.IsRead); err != nil {
+		if err := rows.Scan(&notification.ID, &notification.UserID, &notification.PostID, &notification.CommentID, &notification.Type, &notification.Message, &notification.CreatedAt, &notification.IsRead, &notification.Username); err != nil {
 			return nil, fmt.Errorf("error scanning notification: %w", err)
 		}
+
+		// Handle the Username field (check if it's NULL)
+		if notification.Username != "" {
+			// If the Username is not NULL, we can access notification.Username.String
+		} else {
+			// If it's NULL, you can handle it accordingly
+			notification.Username = "" // Or whatever default value you want
+		}
+
 		notifications = append(notifications, notification)
 	}
 
 	// Return notifications and nil for error (no error occurred)
 	return notifications, nil
 }
-
 func (r *PostRepo) GetUserCommentsByUserID(userID int) ([]models.Post, error) {
 	query := `
 	SELECT DISTINCT 
@@ -523,47 +542,56 @@ func (r *PostRepo) DeletePost(postID int) error {
 }
 
 func (r *PostRepo) UpdatePost(post models.Post) error {
-	// Prepare the dynamic query
-	query := "UPDATE Posts SET "
-	params := make([]interface{}, 0) // Create a slice of type []interface{}
-	paramIndex := 1
+	tx, err := r.DB.Begin()
+	if err != nil {
+		log.Printf("error starting transaction: %v", err)
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	defer tx.Rollback()
 
-	// Dynamically build parts of the SQL query
-	if post.Title != "" {
-		query += fmt.Sprintf("Title = $%d, ", paramIndex)
-		params = append(params, post.Title)
-		paramIndex++
-	}
-	if post.Text != "" {
-		query += fmt.Sprintf("Text = $%d, ", paramIndex)
-		params = append(params, post.Text)
-		paramIndex++
-	}
-	if post.ImageURL != "" {
-		query += fmt.Sprintf("ImageURL = $%d, ", paramIndex)
-		params = append(params, post.ImageURL)
-		paramIndex++
+	// Update the main post details
+	query := `
+		UPDATE Posts 
+		SET Title = ?, Text = ?, ImageURL = ? 
+		WHERE ID = ?`
+	_, err = tx.Exec(query, post.Title, post.Text, post.ImageURL, post.ID)
+	if err != nil {
+		log.Printf("error updating post: %v", err)
+		return fmt.Errorf("error updating post: %w", err)
 	}
 
-	// Remove the trailing comma and space, then add WHERE clause
-	query = query[:len(query)-2] + fmt.Sprintf(" WHERE id = $%d", paramIndex)
-	params = append(params, post.ID)
-
-	// Manually pass each element of params
-	switch len(params) {
-	case 1:
-		_, err := r.DB.Exec(query, params[0])
-		return err
-	case 2:
-		_, err := r.DB.Exec(query, params[0], params[1])
-		return err
-	case 3:
-		_, err := r.DB.Exec(query, params[0], params[1], params[2])
-		return err
-	case 4:
-		_, err := r.DB.Exec(query, params[0], params[1], params[2], params[3])
-		return err
-	default:
-		return fmt.Errorf("unsupported number of parameters: %d", len(params))
+	// Clear existing categories for the post
+	_, err = tx.Exec(`DELETE FROM PostCategory WHERE PostID = ?`, post.ID)
+	if err != nil {
+		log.Printf("error deleting old categories: %v", err)
+		return fmt.Errorf("error deleting old categories: %w", err)
 	}
+
+	for _, category := range post.Categories {
+
+		cat, err := r.GetCategoryByName(category.Name)
+		if err != nil {
+			log.Printf("error retrieving category by name: %v", err)
+			return fmt.Errorf("error retrieving category by name: %w", err)
+		}
+
+		for _, v := range cat {
+			_, err = tx.Exec(`
+				INSERT INTO PostCategory (PostID, CategoryID)
+				VALUES (?, ?)
+			`, post.ID, v.ID)
+			if err != nil {
+				log.Printf("error inserting category: %v", err)
+				return fmt.Errorf("error inserting category: %w", err)
+			}
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("error committing transaction: %v", err)
+		return fmt.Errorf("error committing transaction: %w", err)
+	}
+
+	return nil
 }

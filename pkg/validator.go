@@ -62,7 +62,7 @@ func MaxChars(value string, n int) bool {
 
 func VallidatePost(post models.Post) error {
 	post.Title = strings.TrimSpace(post.Title)
-	words := strings.Split(post.Text, " ")
+
 	post.Text = strings.TrimSpace(post.Text)
 	if ok := isTextAscii(post.Title); !ok {
 		return ErrTitleNotAscii
@@ -79,11 +79,7 @@ func VallidatePost(post models.Post) error {
 	if len(post.Text) < 4 || len(post.Text) > 600 {
 		return ErrTextLength
 	}
-	for _, word := range words {
-		if len(word) > 30 {
-			return ErrWordsLength
-		}
-	}
+
 	return nil
 }
 

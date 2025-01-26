@@ -166,8 +166,7 @@ func (r *AuthRepo) GetUserByGoogleID(googleID string) (models.User, error) {
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.GoogleID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Если пользователя с таким GoogleID не существует, возвращаем nil
-			return user, nil
+			return user, fmt.Errorf("user with GoogleID %s not found", googleID)
 		}
 		return user, fmt.Errorf("unable to fetch user by GoogleID: %w", err)
 	}
@@ -176,21 +175,20 @@ func (r *AuthRepo) GetUserByGoogleID(googleID string) (models.User, error) {
 
 func (r *AuthRepo) GetUserByGithubID(githubID string) (models.User, error) {
 	var user models.User
-	query := `SELECT ID, Username, Email, GoogleID FROM User WHERE GoogleID = ?`
+	query := `SELECT ID, Username, Email, GithubID FROM User WHERE GithubID = ?`
 
 	row := r.DB.QueryRow(query, githubID)
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.GitHubID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Если пользователя с таким GoogleID не существует, возвращаем nil
-			return user, nil
+
+			return user, fmt.Errorf("user with GithubID %s not found", githubID)
 		}
-		return user, fmt.Errorf("unable to fetch user by GoogleID: %w", err)
+		return user, fmt.Errorf("unable to fetch user by GithubID: %w", err)
 	}
 	return user, nil
 }
 
-// Обновить пользователя с данными Google
 func (auth *AuthRepo) UpdateUserWithGoogleData(id string) error {
 	query := `UPDATE User SET GoogleID = $1 WHERE GoogleID = ''`
 	_, err := auth.DB.Exec(query, id)
@@ -203,11 +201,14 @@ func (auth *AuthRepo) UpdateUserWithGoogleData(id string) error {
 func (repo *AuthRepo) GetUserFromGoogleToken(token string) (models.User, error) {
 	// Initialize Google OAuth2 config
 	googleOauth2Config := oauth2.Config{
-		ClientID:     "474394525572-vj65k8l3fnv0p0pp1i0c2ve31bnu137f.apps.googleusercontent.com",
-		ClientSecret: "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",
+		ClientID:     "474394525572-pbrh9edm251u9d04e0l9l7qtqiq217bg.apps.googleusercontent.com",
+		ClientSecret: "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",
 		RedirectURL:  "http://localhost:8081/auth/google/callback",
-		Scopes:       []string{"email", "profile"},
-		Endpoint:     google.Endpoint,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		Endpoint: google.Endpoint,
 	}
 
 	// Use Google OAuth2 config to create a client and fetch user info
@@ -239,27 +240,23 @@ func (repo *AuthRepo) GetUserFromGoogleToken(token string) (models.User, error) 
 }
 
 func (repo *AuthRepo) GetUserFromGitHubToken(token string) (models.User, error) {
-	// Define the URL to fetch GitHub user info
+
 	const githubUserInfoURL = "https://api.github.com/user"
 
-	// Create an HTTP client to fetch user info
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", githubUserInfoURL, nil)
 	if err != nil {
 		return models.User{}, err
 	}
 
-	// Set the Authorization header with the token
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	// Execute the request
 	resp, err := client.Do(req)
 	if err != nil {
 		return models.User{}, err
 	}
 	defer resp.Body.Close()
 
-	// Decode the response into a GitHub user struct
 	var githubUser struct {
 		ID       string `json:"id"`
 		Username string `json:"login"`
@@ -269,13 +266,11 @@ func (repo *AuthRepo) GetUserFromGitHubToken(token string) (models.User, error) 
 		return models.User{}, err
 	}
 
-	// Find the user by their GitHub ID (or email, depending on your implementation)
 	user, err := repo.GetUserByGithubID(githubUser.ID)
 	if err != nil {
 		return models.User{}, err
 	}
 
-	// Return the user information
 	return user, nil
 }
 

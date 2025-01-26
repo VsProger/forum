@@ -32,11 +32,14 @@ type Auth interface {
 }
 
 var googleOauth2Config = oauth2.Config{
-	ClientID:     "474394525572-vj65k8l3fnv0p0pp1i0c2ve31bnu137f.apps.googleusercontent.com",
-	ClientSecret: "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",
+	ClientID:     "474394525572-pbrh9edm251u9d04e0l9l7qtqiq217bg.apps.googleusercontent.com",
+	ClientSecret: "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",
 	RedirectURL:  "http://localhost:8081/auth/google/callback",
-	Scopes:       []string{"email", "profile"},
-	Endpoint:     google.Endpoint,
+	Scopes: []string{
+		"https://www.googleapis.com/auth/userinfo.email",
+		"https://www.googleapis.com/auth/userinfo.profile",
+	},
+	Endpoint: google.Endpoint,
 }
 
 var githubOauth2Config = oauth2.Config{
@@ -188,11 +191,14 @@ func (a *AuthService) CreateUserFromOAuth(token *oauth2.Token) (models.User, err
 
 	// OAuth2 configuration for Google
 	googleOauth2Config := oauth2.Config{
-		ClientID:     "474394525572-vj65k8l3fnv0p0pp1i0c2ve31bnu137f.apps.googleusercontent.com",
-		ClientSecret: "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",
+		ClientID:     "474394525572-pbrh9edm251u9d04e0l9l7qtqiq217bg.apps.googleusercontent.com",
+		ClientSecret: "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",
 		RedirectURL:  "http://localhost:8081/auth/google/callback",
-		Scopes:       []string{"email", "profile"},
-		Endpoint:     google.Endpoint,
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+		},
+		Endpoint: google.Endpoint,
 	}
 
 	// Determine the provider and set the appropriate user info URL
@@ -280,14 +286,14 @@ func (a *AuthService) CreateUserFromOAuth(token *oauth2.Token) (models.User, err
 }
 
 func (a *AuthService) UpdateUserWithGitHubData(token string) error {
-	// Get the user by the token (likely the GitHub ID)
-	user, err := a.repo.GetUserFromGitHubToken(token) // Assuming this method retrieves the user based on the GitHub token
+
+	user, err := a.repo.GetUserFromGitHubToken(token)
 	if err != nil {
+
 		log.Println(err)
 		return err
 	}
 
-	// Update user with the new GitHub data
 	err = a.repo.UpdateUserWithGitHubData(user)
 	if err != nil {
 		log.Println(err)

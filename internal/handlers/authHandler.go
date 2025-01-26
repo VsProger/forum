@@ -64,25 +64,24 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
-	// Получаем конфигурацию OAuth
+
 	config := oauth.GetGoogleOAuth2Config()
 
-	// Генерация URL для авторизации
 	url := config.AuthCodeURL(oauth.GetGoogleOAuth2State(), oauth2.AccessTypeOffline)
 
-	// Перенаправление пользователя на страницу авторизации Google
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	// Получение код авторизации из параметров URL
+
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Error(w, "Code not found", http.StatusBadRequest)
 		return
 	}
 
-	// Получаем конфигурацию OAuth
+	log.Printf("Получен код авторизации: %s", code)
+
 	config := oauth.GetGoogleOAuth2Config()
 
 	// Обмен кода на токен
@@ -292,7 +291,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 		realUser, err := h.service.Auth.GetUserByEmail(user.Email)
 		if err != nil {
-			log.Println(err)
+
 			ErrorHandler(w, http.StatusBadRequest, nameFunction)
 			return
 		}
@@ -377,20 +376,33 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
+		// Получаем куку сессии
 		sessionCookie, err := r.Cookie("session")
 		if err != nil {
+			// Если кука не найдена, ошибку не генерируем (пользователь может быть не в системе)
+			if err == http.ErrNoCookie {
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+
+		// Удаляем сессию на сервере
 		if err := h.service.Auth.DeleteSession(sessionCookie.Value); err != nil {
 			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 			return
 		}
+
+		// Удаляем cookie сессии
 		http.SetCookie(w, &http.Cookie{
 			Name:   "session",
 			Value:  "",
-			MaxAge: -1,
+			MaxAge: -1,  // Это удаляет куку
+			Path:   "/", // Обязательно указываем путь, чтобы она была удалена на всех страницах
 		})
+
+		// Перенаправляем пользователя на главную страницу
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	default:
 		ErrorHandler(w, http.StatusMethodNotAllowed, nameFunction)

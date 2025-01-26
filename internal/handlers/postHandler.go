@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -59,7 +60,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Handle file upload
-		file, _, err := r.FormFile("image")
+		file, fileHeader, err := r.FormFile("image")
 		if err != nil && err.Error() != "http: no such file" { // If error is not related to missing file
 			h.handleError(w, nameFunction, http.StatusBadRequest, fmt.Errorf("file upload error: %v", err))
 			return
@@ -115,8 +116,9 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Save the file if valid
-			imageURL, err := h.uploadImage(file)
+			imageURL, err := h.uploadImage(file, fileHeader) // Pass the fileHeader here as well
 			if err != nil {
+
 				h.handleError(w, nameFunction, http.StatusInternalServerError, err)
 				return
 			}
@@ -399,7 +401,7 @@ func (h *Handler) addReaction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) uploadImage(file multipart.File) (string, error) {
+func (h *Handler) uploadImage(file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
 	// Создаем папку для хранения изображений, если ее нет
 	imageDir := "ui/static/uploads"
 	if err := os.MkdirAll(imageDir, os.ModePerm); err != nil {
@@ -412,31 +414,42 @@ func (h *Handler) uploadImage(file multipart.File) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to read file content: %w", err)
 	}
+
 	// Определяем MIME тип
 	fileType := http.DetectContentType(buffer)
 
-	// Генерируем уникальное имя для файла
-	var fileExtension string
-	switch fileType {
-	case "image/jpeg":
-		fileExtension = ".jpg"
-	case "image/png":
-		fileExtension = ".png"
-	case "image/gif":
-		fileExtension = ".gif"
-	default:
+	// Проверка на расширение файла
+	// Получаем расширение файла через fileHeader
+	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
+
+	// Разрешенные типы файлов
+	var allowedExtensions = map[string]string{
+		".jpeg": "image/jpeg",
+		".jpg":  "image/jpeg",
+		".png":  "image/png",
+		".gif":  "image/gif",
+	}
+
+	// Проверяем расширение и MIME-тип
+	if mimeType, ok := allowedExtensions[ext]; ok {
+		// Если тип файла совпадает с разрешённым, продолжаем
+		if mimeType != fileType {
+			return "", fmt.Errorf("MIME type and file extension mismatch")
+		}
+	} else {
+		// Ошибка неподдерживаемого типа файла
 		return "", fmt.Errorf("unsupported file type: %s", fileType)
 	}
+
+	// Генерируем уникальное имя для файла
+	fileName := fmt.Sprintf("%d%s", time.Now().Unix(), ext)
+	filePath := fmt.Sprintf("%s/%s", imageDir, fileName)
 
 	// Вернемся к началу файла, чтобы можно было его скопировать
 	_, err = file.Seek(0, 0)
 	if err != nil {
 		return "", fmt.Errorf("unable to seek file: %w", err)
 	}
-
-	// Генерируем имя файла с нужным расширением
-	fileName := fmt.Sprintf("%d%s", time.Now().Unix(), fileExtension)
-	filePath := fmt.Sprintf("%s/%s", imageDir, fileName)
 
 	// Открываем файл для записи
 	outFile, err := os.Create(filePath)
@@ -458,28 +471,30 @@ func (h *Handler) GetNotificationsHandler(w http.ResponseWriter, r *http.Request
 
 	session, err := r.Cookie("session")
 	if err != nil {
+
 		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
 
-		user, err := h.service.GetUserByToken(session.Value)
-		if err != nil {
-			ErrorHandler(w, http.StatusInternalServerError, nameFunction)
-			return
-		}
-
-		// Получаем уведомления из базы данных
-		notifications, err := h.service.GetNotificationsByUserID(user.ID)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, "Error fetching notifications", http.StatusInternalServerError)
-			return
-		}
-
-		// Отправляем уведомления как JSON
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"notifications": notifications,
-		})
 	}
+	user, err := h.service.GetUserByToken(session.Value)
+
+	fmt.Print(user)
+	if err != nil {
+		ErrorHandler(w, http.StatusInternalServerError, nameFunction)
+		return
+	}
+
+	notifications, err := h.service.GetNotificationsByUserID(user.ID)
+	if err != nil {
+
+		http.Error(w, "Error fetching notifications", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"notifications": notifications,
+	})
+
 }
 
 func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
@@ -608,11 +623,12 @@ func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
 		categories := r.Form["categories"]
 		post := models.Post{
 			Title: r.FormValue("title"),
-			Text:  r.FormValue("text"),
+
+			Text: r.FormValue("text"),
 		}
 
 		// Handle file upload
-		file, _, err := r.FormFile("image")
+		file, fileHeader, err := r.FormFile("image")
 		if err != nil && err.Error() != "http: no such file" { // If error is not related to missing file
 			h.handleError(w, nameFunction, http.StatusBadRequest, fmt.Errorf("file upload error: %v", err))
 			return
@@ -653,11 +669,7 @@ func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
 
 			// If the file type is not valid, show the error
 			if !isValidType {
-				tmpl.Execute(w, struct {
-					ErrorText string
-				}{
-					ErrorText: "Unsupported file type. Please upload a JPG, PNG, or GIF image.",
-				})
+				ErrorHandlerWithTemplate(tmpl, w, fmt.Errorf("Unsupported file type: %v", fileType), http.StatusBadRequest)
 				return
 			}
 
@@ -668,9 +680,14 @@ func (h *Handler) editPost(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Save the file if valid
-			imageURL, err := h.uploadImage(file)
+			imageURL, err := h.uploadImage(file, fileHeader)
 			if err != nil {
-				h.handleError(w, nameFunction, http.StatusInternalServerError, err)
+				// If there's an error during the upload, display it on the page
+				tmpl.Execute(w, struct {
+					ErrorText string
+				}{
+					ErrorText: "Unsupported type",
+				})
 				return
 			}
 			post.ImageURL = imageURL
