@@ -73,7 +73,6 @@ func (h *Handler) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
-
 	config := oauth.GetGoogleOAuth2Config()
 
 	url := config.AuthCodeURL(oauth.GetGoogleOAuth2State(), oauth2.AccessTypeOffline)
@@ -82,7 +81,6 @@ func (h *Handler) GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
-
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Error(w, "Code not found", http.StatusBadRequest)
@@ -110,10 +108,9 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 	defer resp.Body.Close()
 
 	var userInfo struct {
-		ID       string `json:"id"`
-		Email    string `json:"email"`
-		Name     string `json:"name"`
-		GoogleID string `json:"google_id"`
+		ID    string `json:"id"`
+		Email string `json:"email"`
+		Name  string `json:"name"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
@@ -133,7 +130,7 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 		newUser := models.User{
 			Username: userInfo.Name,
 			Email:    userInfo.Email,
-			GoogleID: &userInfo.GoogleID,
+			GoogleID: &userInfo.ID,
 		}
 		fmt.Print(newUser)
 		err := h.service.Auth.CreateUserGoogle(newUser)
@@ -142,17 +139,18 @@ func (h *Handler) GoogleCallbackHandler(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		user = newUser
-	} else {
-		// Если пользователь существует, обновляем его данные, если необходимо
-		if *user.GoogleID == "" {
-			*user.GoogleID = userInfo.GoogleID
-			err := h.service.Auth.UpdateUserWithGoogleData(userInfo.ID)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Unable to update user with Google data: %s", err), http.StatusInternalServerError)
-				return
-			}
-		}
 	}
+	// } else {
+	// 	// Если пользователь существует, обновляем его данные, если необходимо
+	// 	if *user.GoogleID == "" {
+	// 		*user.GoogleID = userInfo.ID
+	// 		err := h.service.Auth.UpdateUserWithGoogleData(userInfo.ID)
+	// 		if err != nil {
+	// 			http.Error(w, fmt.Sprintf("Unable to update user with Google data: %s", err), http.StatusInternalServerError)
+	// 			return
+	// 		}
+	// 	}
+	// }
 
 	// Создаем сессию для пользователя
 	sessionToken, err := h.service.Auth.SetSession(&user)

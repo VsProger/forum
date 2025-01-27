@@ -445,6 +445,7 @@ func (r *PostRepo) GetNotificationsForUser(userID int) ([]models.Notification, e
 	// Return notifications and nil for error (no error occurred)
 	return notifications, nil
 }
+
 func (r *PostRepo) GetUserCommentsByUserID(userID int) ([]models.Post, error) {
 	query := `
 	SELECT DISTINCT 
@@ -577,8 +578,8 @@ func (r *PostRepo) UpdatePost(post models.Post) error {
 
 		for _, v := range cat {
 			_, err = tx.Exec(`
-				INSERT INTO PostCategory (PostID, CategoryID)
-				VALUES (?, ?)
+			INSERT OR IGNORE INTO PostCategory (PostID, CategoryID) VALUES (?, ?);
+
 			`, post.ID, v.ID)
 			if err != nil {
 				log.Printf("error inserting category: %v", err)

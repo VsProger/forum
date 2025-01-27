@@ -2,9 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/VsProger/snippetbox/internal/models"
 	"github.com/VsProger/snippetbox/internal/repository/auth"
@@ -35,7 +36,7 @@ type Auth interface {
 var googleOauth2Config = oauth2.Config{
 	ClientID:     "474394525572-pbrh9edm251u9d04e0l9l7qtqiq217bg.apps.googleusercontent.com",
 	ClientSecret: "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",
-	RedirectURL:  "http://localhost:8081/auth/google/callback",
+	RedirectURL:  "https://localhost:8081/auth/google/callback",
 	Scopes: []string{
 		"https://www.googleapis.com/auth/userinfo.email",
 		"https://www.googleapis.com/auth/userinfo.profile",
@@ -44,9 +45,9 @@ var googleOauth2Config = oauth2.Config{
 }
 
 var githubOauth2Config = oauth2.Config{
-	ClientID:     "Ov23liop6ipn43yQRXfw",                       // Replace with your GitHub Client ID
-	ClientSecret: "52faf14f32e6efe5b76741d5bd91c485e848c392",   // Replace with your GitHub Client Secret
-	RedirectURL:  "http://localhost:8081/auth/github/callback", // Adjust based on your environment
+	ClientID:     "Ov23liop6ipn43yQRXfw",                        // Replace with your GitHub Client ID
+	ClientSecret: "52faf14f32e6efe5b76741d5bd91c485e848c392",    // Replace with your GitHub Client Secret
+	RedirectURL:  "https://localhost:8081/auth/github/callback", // Adjust based on your environment
 	Scopes:       []string{"read:user", "user:email"},
 	Endpoint:     github.Endpoint,
 }
@@ -199,7 +200,7 @@ func (a *AuthService) CreateUserFromOAuth(token *oauth2.Token) (models.User, err
 	googleOauth2Config := oauth2.Config{
 		ClientID:     "474394525572-pbrh9edm251u9d04e0l9l7qtqiq217bg.apps.googleusercontent.com",
 		ClientSecret: "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",
-		RedirectURL:  "http://localhost:8081/auth/google/callback",
+		RedirectURL:  "https://localhost:8081/auth/google/callback",
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			"https://www.googleapis.com/auth/userinfo.profile",
@@ -292,7 +293,6 @@ func (a *AuthService) CreateUserFromOAuth(token *oauth2.Token) (models.User, err
 }
 
 func (a *AuthService) UpdateUserWithGitHubData(token string) error {
-
 	user, err := a.repo.GetUserFromGitHubToken(token)
 	if err != nil {
 
